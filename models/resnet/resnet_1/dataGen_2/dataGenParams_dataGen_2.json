@@ -1,0 +1,1 @@
+{"rescale": 0.00392156862745098, "validation_split": 0.2, "rotation_range": 5, "width_shift_range": 0.1, "height_shift_range": 0.1}
