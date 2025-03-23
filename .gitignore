@@ -2,6 +2,10 @@
 data*/
 admin/
 
+# ml model files
+*.keras
+*.h5
+*.hdf5
 
 # Ignore venv files and folders
 .ds_covid19
