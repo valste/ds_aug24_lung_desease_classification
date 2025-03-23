@@ -1,5 +1,6 @@
 # folders with images
 data*/
+admin/
 
 
 # Ignore venv files and folders
