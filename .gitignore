@@ -1,6 +1,6 @@
-# folders with images
-data*/
-admin/
+# folders in the root directory
+/data*/
+/admin/
 
 # ml model files
 *.keras
