@@ -9,10 +9,6 @@ from skimage.measure import shannon_entropy
 from src.defs import IMAGE_DIRECTORIES as imdir, DiseaseCategory as dc, ImageType as it
 
 
-class Test():
-    pass
-
-
 class ImageProcessor():
     
     # class provides methods to prepare the images for modelling
