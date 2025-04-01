@@ -1,9 +1,0 @@
-[33ma56d9da[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m)[m HEAD@{0}: pull: Fast-forward
-[33m0701c98[m HEAD@{1}: reset: moving to HEAD~1
-[33m95adc93[m HEAD@{2}: reset: moving to HEAD~1
-[33ma56d9da[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m)[m HEAD@{3}: reset: moving to HEAD~1
-[33mc71217f[m HEAD@{4}: checkout: moving from master to master
-[33mc71217f[m HEAD@{5}: commit: models added
-[33ma56d9da[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m)[m HEAD@{6}: commit: removed .gitkeep from models
-[33m95adc93[m HEAD@{7}: commit: Initial commit
-[33m0701c98[m HEAD@{8}: commit (initial): Initial commit
