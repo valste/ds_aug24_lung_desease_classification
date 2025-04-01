@@ -106,7 +106,7 @@ class ImageProcessor():
         filenames = os.listdir(inputFolder)  # Returns a list of filenames
         
         # load images
-        imgs, iNames = self.loadImgs(filenames)
+        imgs, iNames = self.loadImgs(imgNames=filenames, from_dir=inputFolder)
         
         # size str
         sz = f"{new_size[0]}x{new_size[1]}"
