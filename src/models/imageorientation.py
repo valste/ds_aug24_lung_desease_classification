@@ -68,7 +68,7 @@ class OrientationEstimatorResnet50():
                                         '''
 
         # 2. parameters for image_dataset_from_directory
-        self.param_set = {
+        self.__param_set = {
             "directory" : self.train_valid_dataset_dir,
             "batch_size" : 64,
             "seed": 1,
@@ -81,12 +81,13 @@ class OrientationEstimatorResnet50():
         }
 
         # 3. Compilation parameters
-        self.compiling_params = {
+        self.__compiling_params = {
             "optimizer": 'adam',
             "loss": "categorical_crossentropy", #loss function
             "metrics": ['accuracy']
         }
 
+        # 4. class variables
         self.train_ds, self.val_ds = None, None
         self.history = None
         self.model = None
@@ -124,8 +125,8 @@ class OrientationEstimatorResnet50():
         # When loading data using image_dataset_from_directory() — labels are automatically integers --> sparse_categorical_crossentropy must be used.
         # But after resNet preprocessing: train_ds = train_ds.map(lambda x, y: (preprocess_input(x), y)) the classes are one-hot
         # encoded -->  categorical_crossentropy must be used
-        self.train_ds = image_dataset_from_directory(subset="training",  **self.param_set)
-        self.val_ds = image_dataset_from_directory(subset="validation", **self.param_set)
+        self.train_ds = image_dataset_from_directory(subset="training",  **self.__param_set)
+        self.val_ds = image_dataset_from_directory(subset="validation", **self.__param_set)
 
         # Number of batches in the training dataset
         print("Number of batches in train_ds:", self.train_ds.cardinality().numpy())
@@ -198,7 +199,7 @@ class OrientationEstimatorResnet50():
         predictions = Dense(4, activation='softmax')(x) # 4 classes for orientations: 0°, 90°, 180°, 270° --> softmax
 
         self.model = Model(inputs=inputs, outputs=predictions)
-        self.model.compile(**self.compiling_params)
+        self.model.compile(**self.__compiling_params)
 
         print("model has been compiled successfully")
 
@@ -226,7 +227,7 @@ class OrientationEstimatorResnet50():
         param_file = f'param_set_{self.model_prefix}.json'
         param_path = os.path.join(self.model_dir, param_file)
         with open(param_path, 'w') as f:
-            json.dump(self.param_set, f)
+            json.dump(self.__param_set, f)
 
         # Save training history: accuracy and loss for each epoch
         history_file = f'training_history_{self.model_prefix}.json'
@@ -263,13 +264,13 @@ class OrientationEstimatorResnet50():
                 print(f"{param_path} is empty!")
             else:    
                 with open(param_path, 'r') as f:
-                    self.param_set = json.load(f)
+                    self.__param_set = json.load(f)
 
         print(f"model loaded from {model_path}")
         print(f"model train history loaded from {history_path}")
         print(f"parameter set for image_dataset_from_directory loaded from {param_path}")
 
-        return self.model, self.param_set, self.history
+        return self.model, self.__param_set, self.history
 
 
 
@@ -301,7 +302,7 @@ class OrientationEstimatorResnet50():
 
         if "param_set" in include:
             print(f"image_dataset_from_directory parameters for: {self.model_prefix}")
-            pprint(self.param_set)
+            pprint(self.__param_set)
 
 
 
