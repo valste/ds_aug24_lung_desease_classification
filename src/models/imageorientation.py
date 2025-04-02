@@ -41,63 +41,68 @@ from tensorflow.keras.layers import RandomRotation
 from tensorflow.keras.layers import RandomTranslation
 
 
+class _OrientationEstimatorBase():
 
+    def __init__(self, **kwargs):
 
-
-class OrientationEstimatorResnet50():
-
-    def __init__(self, model_name):
+        # 1. protected basic variables can be set on construction
+        # define allowed parameter keys
+        self._basic_keys = {
+            "model_prefix",
+            "model_dir",
+            "data_dir",
+            "train_valid_dataset_dir",
+            "test_dataset_dir",
+            "test_dataset_desc",
+            "train_ds",
+            "val_ds",
+            "history",
+            "model",
+            "estimated_data_results",
+            "estimated_test_results"
+        }
+        self._model_prefix = None
+        self._model_dir = None
+        self._data_dir = None
+        self._train_valid_dataset_dir = None
+        self._test_dataset_dir = None
+        self._test_dataset_desc = None
+        self._train_ds, self._val_ds = None, None
+        self._history = None
+        self._model = None
+        self._estimated_data_results = None
+        self._estimated_test_results = None
+                
+        # Raise error for unexpected kwargs
+        unexpected = set(kwargs) - self._basic_keys
+        if unexpected:
+            raise ValueError(f"Unexpected kwargs: {unexpected}")
         
-        # 1. Model prefix and directories for storing results and test data
-        self.model_prefix = model_name
-        self.model_dir = rf"C:\Users\User\DataScience\area51\models\resnet\{model_name}"
-        self.data_dir = r"C:\Users\User\DataScience\area51\data\COVID-19_Radiography_Dataset"
-        self.train_valid_dataset_dir    =   r"C:\Users\User\DataScience\area51\data_224x224\train_val_224x224"
-
-        self.test_dataset_dir           =   r"C:\Users\User\DataScience\area51\data_224x224\test_224x224"
-        self.test_dataset_desc = rf'''
-                                        test dataset dir: {self.test_dataset_dir}
-
-                                        dataset contains images:
-
-                                            # rotation    :       image count
-                                            # 0°          :       12
-                                            # +90         :       13
-                                            # -90         :       13
-                                            # 180°        :       14
-                                        '''
-
-        # 2. parameters for image_dataset_from_directory
-        self.__param_set = {
-            "directory" : self.train_valid_dataset_dir,
-            "batch_size" : 64,
-            "seed": 1,
-            "label_mode": "categorical",
-            "color_mode": "rgb",        # resNet requires 3 channel otherwise needs to be trained from scratch 
-            "image_size": (224, 224),   # img_height, img_width
-            "shuffle": True,
-            "validation_split": 0.2,
-            "labels": "inferred"        #from folder structure
-        }
-
-        # 3. Compilation parameters
-        self.__compiling_params = {
-            "optimizer": 'adam',
-            "loss": "categorical_crossentropy", #loss function
-            "metrics": ['accuracy']
-        }
-
-        # 4. class variables
-        self.train_ds, self.val_ds = None, None
-        self.history = None
-        self.model = None
-        self.estimated_data_results = None
-        self.estimated_test_results  = None
+        # Assign values from kwargs for basic attributes
+        for key in self._basic_keys:
+            if key in kwargs:
+                setattr(self, f"_{key}", kwargs[key])
+      
+        # dict objects are set when approriate function is called
+        self._data_loading_params = None 
+        self._compiling_params = None
+        
 
 
 
+class OrientationEstimatorMobileNet(_OrientationEstimatorBase):
 
-    def prepareTrainValidData(self):
+    pass
+
+
+class OrientationEstimatorResnet50(_OrientationEstimatorBase):
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+           
+
+
+    def prepareTrainValidData(self, **kwargs):
         """
         1. Real-time Data Loading with image_dataset_from_directory
 
@@ -122,36 +127,29 @@ class OrientationEstimatorResnet50():
         # This ensures compatibility between our data and the pre-trained model
 
         """
+
         # When loading data using image_dataset_from_directory() — labels are automatically integers --> sparse_categorical_crossentropy must be used.
         # But after resNet preprocessing: train_ds = train_ds.map(lambda x, y: (preprocess_input(x), y)) the classes are one-hot
         # encoded -->  categorical_crossentropy must be used
-        self.train_ds = image_dataset_from_directory(subset="training",  **self.__param_set)
-        self.val_ds = image_dataset_from_directory(subset="validation", **self.__param_set)
-
+        self._train_ds = image_dataset_from_directory(subset="training",  **kwargs)
+        self._val_ds = image_dataset_from_directory(subset="validation", **kwargs)
+        self._data_loading_params = kwargs
         # Number of batches in the training dataset
-        print("Number of batches in train_ds:", self.train_ds.cardinality().numpy())
+        print("Number of batches in train_ds:", self._train_ds.cardinality().numpy())
         # Number of batches in the validation dataset
-        print("Number of batches in val_ds:", self.val_ds.cardinality().numpy())
+        print("Number of batches in val_ds:", self._val_ds.cardinality().numpy())
 
         # Preprocess train/validation data to allign with data the resNet50 was trained on--> ImageNet dataset
         # When you apply preprocess_input(image_tensor), it does:
 
         # ✅ 1. Converts RGB → BGR (channel order switch)
-
         #     ResNet50 was trained using images in BGR format (from original Caffe implementation).
-
         #     So it swaps the channels from [R, G, B] → [B, G, R].
-
         # ✅ 2. Subtracts the ImageNet mean pixel values (no scaling to [0, 1]!)
-
         #     It subtracts these values per channel:
-
         #         Blue: 103.939
-
         #         Green: 116.779
-
         #         Red: 123.68
-
         # This centers the data around zero, similar to how the original model was trained.
 
         # One-hot encoded labels [1000, 0100, 0010, 0001, ...],  len([...])=batch_size
@@ -159,23 +157,23 @@ class OrientationEstimatorResnet50():
         def preprocess(x, y):
             return preprocess_input(x), y
 
-        self.train_ds = self.train_ds.map(preprocess)
-        self.val_ds = self.val_ds.map(preprocess)
+        self._train_ds = self._train_ds.map(preprocess)
+        self._val_ds = self._val_ds.map(preprocess)
        
-        return self.train_ds, self.val_ds
+        return self._train_ds, self._val_ds
     
 
 
     def checkTrainValDataStructure(self):
 
-        for images, labels in self.val_ds.take(1):
+        for images, labels in self._val_ds.take(1):
             print("encoded label samples: ", labels.numpy()[:4])
             print("images.shape: ", images.shape)
 
         
     
 
-    def getCompiledModel(self):
+    def getCompiledModel(self, **kwargs):
 
         # returns the compiled model ready for training
     
@@ -198,110 +196,96 @@ class OrientationEstimatorResnet50():
         x = Flatten()(x)
         predictions = Dense(4, activation='softmax')(x) # 4 classes for orientations: 0°, 90°, 180°, 270° --> softmax
 
-        self.model = Model(inputs=inputs, outputs=predictions)
-        self.model.compile(**self.__compiling_params)
+        self._model = Model(inputs=inputs, outputs=predictions)
+        self._model.compile(**kwargs)
+        self._compiling_params = kwargs
 
-        print("model has been compiled successfully")
+        print(f"The {self._model_prefix} model has been compiled successfully")
 
-        return self.model
+        return self._model
 
 
     
-    def train(self, target_val_acc, epochs = 10):
+    def train(self, target_val_acc=None, epochs = 10, callbacks=[]):
+        
+        if target_val_acc:
+            stop_at_specified_val_acc = StopAtValAccuracy(target_val_acc)
+            callbacks.append(stop_at_specified_val_acc)
+        
+        self._history = self._model.fit(self._train_ds, validation_data = self._val_ds, epochs=epochs, callbacks = callbacks) 
 
-        stop_at_specified_val_acc = StopAtValAccuracy(target_val_acc)
-        self.history = self.model.fit(epochs=epochs, train_data = self.train_ds, validation_data = self.val_ds, callbacks = [stop_at_specified_val_acc]) 
-
-        return self.history
+        return self._history, self._model
 
 
 
     def storeTrainedModel(self):
 
         # Save the model
-        model_file = f'orientation_classifier_{self.model_prefix}.keras'
-        model_path = os.path.join(self.model_dir, model_file)
-        self.model.save(model_path)
+        model_file = f'orientation_classifier_{self._model_prefix}.keras'
+        model_path = os.path.join(self._model_dir, model_file)
+        self._model.save(model_path)
 
-        # save param set for data loading
-        param_file = f'param_set_{self.model_prefix}.json'
-        param_path = os.path.join(self.model_dir, param_file)
-        with open(param_path, 'w') as f:
-            json.dump(self.__param_set, f)
-
-        # Save training history: accuracy and loss for each epoch
-        history_file = f'training_history_{self.model_prefix}.json'
-        history_path = os.path.join(self.model_dir, history_file)
+        # Save training history
+        history_file = f'training_history_{self._model_prefix}.json'
+        history_path = os.path.join(self._model_dir, history_file)
         with open(history_path, 'w') as f:
-            json.dump(self.history, f)
+            json.dump(self._history, f)
 
-        print(model_file, param_file, history_file, "stored to ", self.model_dir)
+        print(model_file, history_file, "stored to ", self._model_dir)
 
        
 
-    def loadTrainedModel(self, include=["history", "param_set"]):
+    def loadTrainedModel(self):
 
         # loading model
-        model_file = f'orientation_classifier_{self.model_prefix}.keras'
-        model_path = os.path.join(self.model_dir, model_file)
-        self.model = load_model(model_path)
+        model_file = f'orientation_classifier_{self._model_prefix}.keras'
+        model_path = os.path.join(self._model_dir, model_file)
+        self._model = load_model(model_path)
 
         # model training history
-        if "history" in include:
-            history_file = f'training_history_{self.model_prefix}.json'
-            history_path = os.path.join(self.model_dir, history_file)
-            if os.path.getsize(history_path) == 0:
-                print(f"{history_path} is empty!")
-            else:
-                with open(history_path, 'r') as f:
-                    self.history = json.load(f)
-
-        # loading params image_dataset_from_directory
-        if "param_set" in include:
-            param_file = f'param_set_{self.model_prefix}.json'
-            param_path = os.path.join(self.model_dir, param_file)
-            if os.path.getsize(param_path) == 0:
-                print(f"{param_path} is empty!")
-            else:    
-                with open(param_path, 'r') as f:
-                    self.__param_set = json.load(f)
+        history_file = f'training_history_{self._model_prefix}.json'
+        history_path = os.path.join(self._model_dir, history_file)
+        if os.path.getsize(history_path) == 0:
+            print(f"{history_path} is empty!")
+        else:
+            with open(history_path, 'r') as f:
+                self._history = json.load(f)
 
         print(f"model loaded from {model_path}")
         print(f"model train history loaded from {history_path}")
-        print(f"parameter set for image_dataset_from_directory loaded from {param_path}")
-
-        return self.model, self.__param_set, self.history
-
+    
+        return self._model, self._history
 
 
-    def plotModelMetrics(self, include=["history", "param_set", "summary"]):
+
+    def plotModelMetrics(self, include=["history",  "summary"]):
 
         if "summary" in include:
             #----model summary----
-            print(f"model summary for: {self.model_prefix}")
-            self.model.summary()
+            print(f"model summary for: {self._model_prefix}")
+            self._model.summary()
         
         if "history" in include:
-            print(f"model accuracy & loss for: {self.model_prefix}")
-            pprint(self.history)
+            print(f"model accuracy & loss for: {self._model_prefix}")
+            pprint(self._history)
             # Plot accuracy and loss
             plt.figure(figsize=(12, 4))
             plt.subplot(1, 2, 1)
-            plt.plot(self.history['accuracy'], label='Accuracy')
-            plt.plot(self.history['val_accuracy'], label='Validation Accuracy')
+            plt.plot(self._history['accuracy'], label='Accuracy')
+            plt.plot(self._history['val_accuracy'], label='Validation Accuracy')
             plt.legend()
             plt.title('Accuracy')
 
             plt.subplot(1, 2, 2)
-            plt.plot(self.history['loss'], label='Loss')
-            plt.plot(self.history['val_loss'], label='Validation Loss')
+            plt.plot(self._history['loss'], label='Loss')
+            plt.plot(self._history['val_loss'], label='Validation Loss')
             plt.legend()
             plt.title('Loss')
 
             plt.show()
 
         if "param_set" in include:
-            print(f"image_dataset_from_directory parameters for: {self.model_prefix}")
+            print(f"image_dataset_from_directory parameters for: {self._model_prefix}")
             pprint(self.__param_set)
 
 
@@ -347,7 +331,7 @@ class OrientationEstimatorResnet50():
         for disease in dc:
 
             if dataset == "test":
-                image_dir = self.test_dataset_dir
+                image_dir = self._test_dataset_dir
                 dis = "test_data"
 
             elif dataset == "data":
@@ -359,7 +343,7 @@ class OrientationEstimatorResnet50():
             
             for img_name in os.listdir(image_dir):
                 img_path = os.path.join(image_dir, img_name)
-                orientation, confidence = estimate_orientation(img_path, self.model)
+                orientation, confidence = estimate_orientation(img_path, self._model)
                 results.append({
                     "Image": img_name,
                     "Orientation": orientation,
@@ -384,17 +368,17 @@ class OrientationEstimatorResnet50():
             file_name = None
 
             if dataset == "test":
-                file_name = f"estimated_orientation_{self.model_prefix}_{dataset}.csv"
+                file_name = f"estimated_orientation_{self._model_prefix}_{dataset}.csv"
                 self.estimated_test_results = df_estimated
 
             elif dataset == "data":
-                file_name = f"estimated_orientation_{self.model_prefix}.csv"
+                file_name = f"estimated_orientation_{self._model_prefix}.csv"
                 self.estimated_data_results = df_estimated
 
             else:
                  raise Exception(f"No such dataset: {dataset}")
 
-            output_csv = os.path.join(self.model_dir, file_name)
+            output_csv = os.path.join(self._model_dir, file_name)
             df_estimated.to_csv(output_csv, index=False)
             print("estimated results saved to: ", output_csv)
 
@@ -407,13 +391,13 @@ class OrientationEstimatorResnet50():
         file_name = None
 
         if dataset == "test":
-            file_name = f"estimated_orientation_{self.model_prefix}_{dataset}.csv"
+            file_name = f"estimated_orientation_{self._model_prefix}_{dataset}.csv"
         elif dataset == "data":
-            file_name = f"estimated_orientation_{self.model_prefix}.csv"
+            file_name = f"estimated_orientation_{self._model_prefix}.csv"
         else:
             raise Exception(f"No such dataset: {dataset}!")
 
-        df_estimated = pd.read_csv(os.path.join(self.model_dir, file_name))
+        df_estimated = pd.read_csv(os.path.join(self._model_dir, file_name))
         df_estimated = df_estimated.sort_values(by=sort_by).reset_index(drop=True)
 
         print("estimated results loaded from: ", file_name)
@@ -445,10 +429,10 @@ class OrientationEstimatorResnet50():
         for disease in dc:
 
             if dataset == "test":
-                image_dir = self.test_dataset_dir
+                image_dir = self._test_dataset_dir
                 dis = "test_data"
                 print("This are the images from the test dataset!")
-                print(self.test_dataset_desc)
+                print(self._test_dataset_desc)
 
             elif dataset == "data":
                 dis = disease.value
@@ -493,4 +477,4 @@ class StopAtValAccuracy(Callback):
         if val_accuracy is not None:
             if val_accuracy >= self.target_val_accuracy:
                 print(f"\nReached target validation accuracy of {self.target_val_accuracy*100:.2f}% at epoch {epoch+1}. Stopping training.")
-                self.model.stop_training = True
+                self._model.stop_training = True
