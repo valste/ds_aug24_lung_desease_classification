@@ -1,5 +1,6 @@
 import pandas as pd
 import os
+import shutil
 from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
@@ -15,7 +16,23 @@ class ImageProcessor():
     
     def __init__(self):
         pass
+
     
+    def listFiles(self, dir_path, extensions=('.png', )):
+        """
+        lists all files in a directory and returns a list with file names
+        """        
+        if not os.path.exists(dir_path):
+            raise Exception(f"directory {dir_path} does not exist")
+        
+        # get all files in the directory
+        filenames = os.listdir(dir_path)  # Returns a list of filenames
+        # filter by extensions
+        filenames = [f for f in filenames if f.endswith(extensions)]
+
+        return filenames
+    
+
     def loadImgs(self, imgNames, from_dir):
         """
         loads images by file names like 'Viral Pneumonia-101.png' from a directory
@@ -32,17 +49,72 @@ class ImageProcessor():
             
             # determine image path
             fileDir = from_dir
-            filePath = fileDir+rf"\{iname}"
+            filePath = os.path.join(fileDir, iname)
             if os.path.exists(filePath):
                 img = cv2.imread(filePath, cv2.IMREAD_GRAYSCALE)
                 imgs.append(img)
             else:
                 raise Exception(f"file {iname} not found in {fileDir}")
 
-        
-            
         return tuple(imgs), tuple(imgNames)
+    
+    
 
+    def store(self, img, name, to_dir):
+        """
+        stores image to a directory with the given name
+        """
+        if not os.path.exists(to_dir):
+            os.makedirs(to_dir)
+        
+        filePath = os.path.join(to_dir, name)
+        cv2.imwrite(filePath, img)
+
+        return filePath
+    
+  
+
+    def copyRenameDownscaleRotateSave(self, imgs, imgNames, to_dir, new_resolution, strip_prefix, add_prefix, rotAngle):
+        
+        os.makedirs(to_dir, exist_ok=True)
+        cnt = 0
+        rotated_names = []
+
+        for img, name in zip(imgs, imgNames):
+            
+            img_rot = None
+            
+            # Downscale the image
+            if new_resolution is not None:
+                img = cv2.resize(img, new_resolution, interpolation=cv2.INTER_AREA)
+
+            # Rotate the image
+            if rotAngle != 0:
+                img_rot = cv2.rotate(img, rotAngle)
+            else:
+                img_rot = img
+
+            # Strip prefix if present
+            if name.startswith(strip_prefix):
+                stripped_name = name[len(strip_prefix):]
+            else:
+                stripped_name = name
+
+            # Add new prefix
+            new_name = add_prefix + stripped_name
+            rotated_names.append(new_name)
+            # Define full source and destination paths
+            # src_path = os.path.join(from_dir, name)
+            dst_path = os.path.join(to_dir, new_name)
+            # save the rotated image
+            cv2.imwrite(dst_path, img_rot)
+            # Copy the file
+            # shutil.copy2(src_path, dst_path)
+            cnt += 1
+        
+        print(f"{cnt} images have been copied and rotated to {to_dir}")
+        
+        return rotated_names
 
 
     def plot_images(self, images, titles=None, tSize=10, max_img_per_row=5):
@@ -134,8 +206,7 @@ class ImageProcessor():
         if debug:
             print(f"{cnt} images have been downscaled and stored to {outputFolder_HxW}")       
             
-              
-    
+                  
   
     def getRoiWithResizedMask(self, img, mask, contourThiknes=1, plotResult=True):
         # Resize the mask to match the X-ray image size and returns the original image 
@@ -211,7 +282,6 @@ class ImageProcessor():
                 pass
         
         return lung_area
-
 
 
 
@@ -438,25 +508,7 @@ def apply_masks(imgs_dir, masks_dir, output_dir):
         print(f"Processed and saved: {output_path}")
 
 
-# Rename files by prepending the prefix "mskd"
-def rename_files_with_prefix(directory, prefix):
-    if not os.path.exists(directory):
-        raise FileNotFoundError(f"The directory does not exist: {directory}")
 
-    for file_name in os.listdir(directory):
-        old_file_path = os.path.join(directory, file_name)
-
-        # Skip if it's not a file
-        if not os.path.isfile(old_file_path):
-            continue
-
-        # Create new file name with prefix
-        new_file_name = f"{prefix}{file_name}"
-        new_file_path = os.path.join(directory, new_file_name)
-
-        # Rename the file
-        os.rename(old_file_path, new_file_path)
-        print(f"Renamed: {old_file_path} -> {new_file_path}")
 
 
 def visualize_random_images(image_paths, n_samples_per_category=5):
