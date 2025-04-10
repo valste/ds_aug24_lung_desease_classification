@@ -1,0 +1,53 @@
+Image,Orientation,Confidence,Disease
+75x75_rotated_180_Lung_Opacity-1362.png,rotated_minus_90,0.9498211741447449,test_data
+75x75_rotated_minus_90_Lung_Opacity-1144.png,rotated_minus_90,0.6177251935005188,test_data
+75x75_Lung_Opacity-34.png,rotated_minus_90,0.5594013333320618,test_data
+75x75_rotated_180_Lung_Opacity-386.png,rotated_minus_90,0.4990808069705963,test_data
+75x75_Lung_Opacity-44.png,rotated_minus_90,0.4921369254589081,test_data
+75x75_Lung_Opacity-29.png,rotated_minus_90,0.46914204955101013,test_data
+75x75_rotated_minus_90_Lung_Opacity-371.png,rotated_minus_90,0.4314134120941162,test_data
+75x75_rotated_180_Lung_Opacity-984.png,rotated_minus_90,0.4047459661960602,test_data
+75x75_Lung_Opacity-85.png,rotated_minus_90,0.38412803411483765,test_data
+75x75_rotated_90_Lung_Opacity-5958.png,rotated_minus_90,0.3658212125301361,test_data
+75x75_rotated_minus_90_Lung_Opacity-1115.png,rotated_minus_90,0.2970467209815979,test_data
+75x75_Lung_Opacity-99.png,rotated_90,0.3002336919307709,test_data
+75x75_rotated_minus_90_Lung_Opacity-1114.png,rotated_90,0.2924303710460663,test_data
+75x75_Lung_Opacity-24.png,rotated_90,0.2851336598396301,test_data
+75x75_Lung_Opacity-70.png,rotated_90,0.2810339033603668,test_data
+75x75_rotated_180_Lung_Opacity-792.png,rotated_180,0.7585263848304749,test_data
+75x75_rotated_180_Lung_Opacity-959.png,rotated_180,0.7364793419837952,test_data
+75x75_rotated_minus_90_Lung_Opacity-753.png,rotated_180,0.6686655879020691,test_data
+75x75_rotated_180_Lung_Opacity-5.png,rotated_180,0.6210097074508667,test_data
+75x75_rotated_180_Lung_Opacity-371.png,rotated_180,0.5892375707626343,test_data
+75x75_rotated_180_Lung_Opacity-985.png,rotated_180,0.566145658493042,test_data
+75x75_rotated_180_Lung_Opacity-1.png,rotated_180,0.5334064364433289,test_data
+75x75_rotated_minus_90_Lung_Opacity-730.png,rotated_180,0.5239166021347046,test_data
+75x75_rotated_minus_90_Lung_Opacity-1143.png,rotated_180,0.5211417078971863,test_data
+75x75_rotated_180_Lung_Opacity-791.png,rotated_180,0.5210257768630981,test_data
+75x75_rotated_minus_90_Lung_Opacity-754.png,rotated_180,0.5044804811477661,test_data
+75x75_Lung_Opacity-93.png,rotated_180,0.5038706660270691,test_data
+75x75_rotated_90_Lung_Opacity-40 .png,rotated_180,0.49464643001556396,test_data
+75x75_rotated_minus_90_Lung_Opacity-1157.png,rotated_180,0.4813147783279419,test_data
+75x75_rotated_180_Lung_Opacity-380.png,rotated_180,0.4494876265525818,test_data
+75x75_rotated_90_Lung_Opacity-28 .png,rotated_180,0.438791960477829,test_data
+75x75_rotated_90_Lung_Opacity-59 .png,rotated_180,0.42452389001846313,test_data
+75x75_rotated_minus_90_Lung_Opacity-5.png,rotated_180,0.39623433351516724,test_data
+75x75_rotated_180_Lung_Opacity-72.png,rotated_180,0.3898281157016754,test_data
+75x75_rotated_minus_90_Lung_Opacity-1421.png,rotated_180,0.3776421844959259,test_data
+75x75_rotated_90_Lung_Opacity-73.png,rotated_180,0.3744995892047882,test_data
+75x75_rotated_90_Lung_Opacity-76 .png,rotated_180,0.35450097918510437,test_data
+75x75_Lung_Opacity-13.png,rotated_180,0.3341648280620575,test_data
+75x75_rotated_180_Lung_Opacity-828.png,rotated_180,0.32813116908073425,test_data
+75x75_rotated_minus_90_Lung_Opacity-1432.png,rotated_180,0.31630033254623413,test_data
+75x75_Lung_Opacity-3.png,rotated_180,0.3106995224952698,test_data
+75x75_rotated_180_Lung_Opacity-812.png,rotated_180,0.30826184153556824,test_data
+75x75_Lung_Opacity-41.png,correct,0.8358486294746399,test_data
+75x75_rotated_90_Lung_Opacity-5953.png,correct,0.6008692979812622,test_data
+75x75_rotated_minus_90_Lung_Opacity-28.png,correct,0.5810235142707825,test_data
+75x75_Lung_Opacity-28.png,correct,0.5289217233657837,test_data
+75x75_rotated_90_Lung_Opacity-5949.png,correct,0.4459311068058014,test_data
+75x75_rotated_90_Lung_Opacity-35.png,correct,0.42667993903160095,test_data
+75x75_rotated_90_Lung_Opacity-54 .png,correct,0.40379637479782104,test_data
+75x75_rotated_90_Lung_Opacity-5987.png,correct,0.39036235213279724,test_data
+75x75_rotated_90_Lung_Opacity-46.png,correct,0.34748128056526184,test_data
+75x75_rotated_90_Lung_Opacity-5956.png,correct,0.3021661639213562,test_data
