@@ -1,0 +1,102 @@
+{
+    "basic_params": {
+        "img_resolution": [
+            224,
+            224
+        ],
+        "model_name": "224x224_aug_head1_mobnet",
+        "model_dir": "C:\\Users\\User\\DataScience\\area51\\models\\224x224_aug_head1_mobnet",
+        "data_dir": "C:\\Users\\User\\DataScience\\area51\\data\\COVID-19_Radiography_Dataset",
+        "train_valid_dataset_dir": "C:\\Users\\User\\DataScience\\area51\\data_224x224\\train_val_224x224",
+        "test_dataset_dir": "C:\\Users\\User\\DataScience\\area51\\data_224x224\\test_224x224",
+        "test_dataset_desc": "\n    test dataset dir: C:\\Users\\User\\DataScience\\area51\\data_224x224\\test_224x224\n    dataset contains images:\n    # rotation    :       image count\n    # 0\u00b0          :       12\n    # +90         :       13\n    # -90         :       13\n    # 180\u00b0        :       14\n                                        "
+    },
+    "data_loading_params": {
+        "directory": "C:\\Users\\User\\DataScience\\area51\\data_224x224\\train_val_224x224",
+        "batch_size": 32,
+        "seed": 42,
+        "label_mode": "categorical",
+        "color_mode": "rgb",
+        "image_size": [
+            224,
+            224
+        ],
+        "shuffle": true,
+        "validation_split": 0.2,
+        "labels": "inferred"
+    },
+    "model_params": {
+        "optimizer": "adam",
+        "loss": "categorical_crossentropy",
+        "metrics": [
+            "accuracy"
+        ]
+    },
+    "history": {
+        "accuracy": [
+            0.8702000379562378,
+            0.9373863339424133,
+            0.9436216950416565,
+            0.9522473216056824,
+            0.9563522934913635,
+            0.9598337411880493,
+            0.9586905837059021,
+            0.9600415825843811,
+            0.9618082642555237,
+            0.9574434757232666
+        ],
+        "loss": [
+            0.32721588015556335,
+            0.1741330623626709,
+            0.1481045037508011,
+            0.13084469735622406,
+            0.11948016285896301,
+            0.11520271003246307,
+            0.11603466421365738,
+            0.11417366564273834,
+            0.10948403924703598,
+            0.11241956800222397
+        ],
+        "val_accuracy": [
+            0.8842236399650574,
+            0.95489501953125,
+            0.9596757292747498,
+            0.9596757292747498,
+            0.9627935886383057,
+            0.9602993130683899,
+            0.9644564390182495,
+            0.9625857472419739,
+            0.9623779058456421,
+            0.9623779058456421
+        ],
+        "val_loss": [
+            0.23228828608989716,
+            0.12375563383102417,
+            0.11764161288738251,
+            0.1148151233792305,
+            0.11029556393623352,
+            0.1128104031085968,
+            0.1045934334397316,
+            0.1105678454041481,
+            0.11111345887184143,
+            0.11055219173431396
+        ],
+        "learning_rate": [
+            0.0010000000474974513,
+            0.0010000000474974513,
+            0.0010000000474974513,
+            0.0010000000474974513,
+            0.00010000000474974513,
+            0.00010000000474974513,
+            0.00010000000474974513,
+            1.0000000656873453e-05,
+            1.0000000656873453e-05,
+            1.0000000656873453e-05
+        ],
+        "trainig_params": {
+            "training_time": 2539.5902400016785,
+            "target_val_acc": 1,
+            "epochs": 30
+        }
+    }
+}

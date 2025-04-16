@@ -3,7 +3,7 @@
 /admin/
 
 # ml model files
-# *.keras
+*.keras
 # *.h5
 # *.hdf5
 
