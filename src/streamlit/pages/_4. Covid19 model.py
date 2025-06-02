@@ -1,0 +1,63 @@
+# -*- coding: utf-8 -*-
+import streamlit as st
+import io
+import pandas as pd
+from tensorflow.keras.models import load_model
+
+# Set the path to the model directory
+model_path = 'src/streamlit/models/covid19'
+report_data_path = "src/streamlit/data"
+
+
+st.set_page_config(page_title="Covid-19 🦠 Detection", page_icon="🦠", layout="wide")
+
+st.title("Covid 19 model")
+st.markdown(
+    """
+Although it is well known that using a model pre-trained on a very large dataset (millions of images) typically yields more accurate results for COVID-19 classification, we wanted to test our understanding of how CNN models work and explore the limitations faced when building a model from scratch.
+
+In our project, we experimented with both approaches:
+
+- Developing a custom CNN model from scratch.
+- Applying transfer learning using a pre-trained model.
+
+Overall, this experience has been highly rewarding and has significantly deepened our understanding of CNNs for tackling future challenges.
+"""
+)
+
+model = load_model(f"{model_path}/cnn_model.keras", compile=False)
+
+def get_model_summary(model):
+    string_io = io.StringIO()
+    model.summary(print_fn=lambda x: print(x, file=string_io))
+    summary_string = string_io.getvalue()
+    string_io.close()
+    return summary_string
+
+st.subheader("Model Summary")
+with st.expander("Show Model Summary"):
+    st.code(get_model_summary(model), language='text')
+
+st.subheader("Model training history")
+cnn_history = pd.read_json(f"{model_path}/training_history.json", orient='records')
+st.line_chart(cnn_history[['accuracy', 'val_accuracy']], use_container_width=True)
+st.line_chart(cnn_history[['loss', 'val_loss']])
+st.line_chart(cnn_history[['learning_rate']])
+
+st.subheader("Model evaluation")
+st.markdown(
+    """
+The results can be summarized as the following:
+
+- COVID: Good precision and slightly lower recall. Our model is cautious predicting COVID (good, but misses some cases).
+- Lung Opacity: Slightly lower precision (0.85), but high recall (0.88). Our model captures most Lung Opacity cases but some confusion happens.
+- Normal: Balanced and high as the results were 91% precision, 93% recall, 92% F1. Our model is very good at identifying healthy lungs.
+- Viral Pneumonia: near perfect prediction, but we know that this class had mode augmented images than the others
+"""
+)
+cnn_model_cm = pd.read_csv(f"{report_data_path}/cnn_model_cm.csv", index_col=0)
+st.dataframe(cnn_model_cm)
+st.image("src/streamlit/images/cnn_cm.png", caption="Confusion Matrix")
+
+st.subheader("Grad-CAM visualization")
+st.image("src/streamlit/images/5.5_cnn.png", caption="Grad-CAM visualization for CNN model")

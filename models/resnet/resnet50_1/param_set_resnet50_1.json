@@ -1,1 +1,0 @@
-{"directory": "C:\\Users\\User\\DataScience\\area51\\data_224x224\\train_val_224x224", "batch_size": 64, "seed": 1, "label_mode": "categorical", "color_mode": "rgb", "image_size": [224, 224], "shuffle": true, "validation_split": 0.2, "labels": "inferred"}

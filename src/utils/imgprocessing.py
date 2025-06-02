@@ -1,24 +1,19 @@
 import pandas as pd
 import os
-import shutil
 from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
 from tabulate import tabulate
 from skimage.measure import shannon_entropy
-from src.defs import IMAGE_DIRECTORIES as imdir, DiseaseCategory as dc, ImageType as it
 
 
 class ImageProcessor():
-    
-    # class provides methods to prepare the images for modelling
-    
-    def __init__(self):
-        pass
+    # class provides methods to prepare images for modelling
 
     
-    def listFiles(self, dir_path, extensions=('.png', )):
+    @staticmethod
+    def list_files( dir_path, extensions=('.png', )):
         """
         lists all files in a directory and returns a list with file names
         """        
@@ -32,8 +27,12 @@ class ImageProcessor():
 
         return filenames
     
+    
+    
+    
 
-    def loadImgs(self, imgNames, from_dir):
+    @staticmethod
+    def load_images(imgNames, from_dir):
         """
         loads images by file names like 'Viral Pneumonia-101.png' from a directory
 
@@ -60,7 +59,10 @@ class ImageProcessor():
     
     
 
-    def store(self, img, name, to_dir):
+
+
+    @staticmethod
+    def store(img, name, to_dir):
         """
         stores image to a directory with the given name
         """
@@ -72,9 +74,60 @@ class ImageProcessor():
 
         return filePath
     
+    
+     
+    
+    
+    @staticmethod
+    def downscale_to_dir(inputFolder, outputFolder, new_size, interpolation=cv2.INTER_AREA):
+        """
+        downscales all images in a directory to the new size and stores them in the output folder
+        """
+        # load images
+        iNames = ImageProcessor.list_files(inputFolder)
+        imgs, iNames = ImageProcessor.load_images(imgNames=inputFolder, from_dir=inputFolder)
+        for img_name, img in zip(iNames, imgs):
+            
+            # Downscale the image
+            if new_size is not None:
+                img = cv2.resize(img, new_size, interpolation=interpolation)
+            
+            # store the image
+            ImageProcessor.store(img, img_name, outputFolder)
+            
+
+
+
+
+    @staticmethod
+    def rotate_to_dir(inputFolder, outputFolder, rotAngle):
+        
+        if rotAngle not in [cv2.ROTATE_90_CLOCKWISE, cv2.ROTATE_180, cv2.ROTATE_90_COUNTERCLOCKWISE]:
+            raise Exception(f"rotation angle {rotAngle} not supported")
+        
+        # load images
+        iNames = ImageProcessor.list_files(inputFolder)
+        imgs, iNames = ImageProcessor.load_images(imgNames=iNames, from_dir=inputFolder)
+        
+        angleStr = {cv2.ROTATE_90_CLOCKWISE: "90 degrees clockwise",
+                     cv2.ROTATE_180: "180 degrees",
+                     cv2.ROTATE_90_COUNTERCLOCKWISE: "90 degrees counterclockwise"}
+        
+        print(f"rotating {len(imgs)} images by {angleStr[rotAngle]}\nfrom {inputFolder} \nto {outputFolder}")
+        
+        for img_name, img in zip(iNames, imgs):
+            
+            # Rotate the image
+            img_rot = cv2.rotate(img, rotAngle)
+                
+            # store the image
+            ImageProcessor.store(img_rot, img_name, outputFolder)
+  
   
 
-    def copyRenameDownscaleRotateSave(self, imgs, imgNames, to_dir, new_resolution, strip_prefix, add_prefix, rotAngle):
+
+    @staticmethod
+    def copyRenameDownscaleRotateSave( imgs, imgNames, to_dir, new_resolution, strip_prefix, add_prefix, rotAngle):
         
         os.makedirs(to_dir, exist_ok=True)
         cnt = 0
@@ -117,7 +170,9 @@ class ImageProcessor():
         return rotated_names
 
 
-    def plot_images(self, images, titles=None, tSize=10, max_img_per_row=5):
+
+    @staticmethod
+    def plot_images(images, titles=None, tSize=10, max_img_per_row=5):
         
         import math 
         
@@ -152,7 +207,8 @@ class ImageProcessor():
         
     
     
-    def downscale(self, img, new_size, interpolation=cv2.INTER_AREA, plotResult=True):
+    @staticmethod
+    def downscale( img, new_size, interpolation=cv2.INTER_AREA, plotResult=True):
         # resizes a gray-scaled image to the new_size and returns
               
         # Resize using INTER_AREA
@@ -172,43 +228,49 @@ class ImageProcessor():
 
 
 
-    def downscaleToFolder(self, inputFolder, outputFolder, new_size, interpolation=cv2.INTER_AREA, debug=True):
-        
+    @staticmethod
+    def downscaleToFolder(inputFolder, outputFolder, new_size, interpolation=cv2.INTER_AREA, debug=True):
+        # overwrites already existing files if the name is equal
         # get image names
         filenames = os.listdir(inputFolder)  # Returns a list of filenames
         
         # load images
-        imgs, iNames = self.loadImgs(imgNames=filenames, from_dir=inputFolder)
-        
-        # size str
-        sz = f"{new_size[0]}x{new_size[1]}"
-        
-        # subfolder with size
-        
-        outputFolder_HxW = os.path.join(outputFolder, sz)
+        imgs, iNames = ImageProcessor.load_images(imgNames=filenames, from_dir=inputFolder)
         
         # create directory
-        os.makedirs(outputFolder_HxW, exist_ok=True)
+        os.makedirs(outputFolder, exist_ok=True)
         
         cnt = 0
 
-        # downscale and save
         for img, name in zip(imgs, iNames):
-            
-            cnt += 1
-            
-            dImg = self.downscale(img, new_size, interpolation, plotResult=False)
-            fName = rf"\{new_size[0]}x{new_size[1]}_{name}"
-            file_path = outputFolder_HxW+fName
-            cv2.imwrite(file_path, dImg)
-            
+            if img is None:
+                print(f"[Warning] Skipping image (could not load): {name}")
+                continue
+
+            try:
+                dImg = ImageProcessor.downscale(img, new_size, interpolation, plotResult=False)
+
+                # replace extension with .png
+                base_name = os.path.splitext(name)[0]
+                new_filename = base_name + ".png"
+                file_path = os.path.join(outputFolder, new_filename)
+
+                cv2.imwrite(file_path, dImg)
+                print(f"[Saved] {file_path}")
+                cnt += 1
+            except Exception as e:
+                print(f"[Error] Could not process {name}: {e}")
+
         
         if debug:
-            print(f"{cnt} images have been downscaled and stored to {outputFolder_HxW}")       
+            print(f"{cnt} images have been downscaled and stored to {outputFolder}")       
+        
+        return cnt  
             
                   
   
-    def getRoiWithResizedMask(self, img, mask, contourThiknes=1, plotResult=True):
+    @staticmethod
+    def getRoiWithResizedMask( img, mask, contourThiknes=1, plotResult=True):
         # Resize the mask to match the X-ray image size and returns the original image 
         # overlayed with mask contour 
         
@@ -285,263 +347,277 @@ class ImageProcessor():
 
 
 
-# Analyze class distribution
-def class_distribution(image_directories):
-    class_counts = {category: len(os.listdir(paths["images"])) for category, paths in image_directories.items()}
-    plt.bar(class_counts.keys(), class_counts.values(), color='green')
-    plt.title('Class Distribution')
-    #plt.xlabel('Category')
-    plt.ylabel('Number of Images')
-    plt.show()
+    # Analyze class distribution
+    @staticmethod
+    def class_distribution(image_directories):
+        class_counts = {category: len(os.listdir(paths["images"])) for category, paths in image_directories.items()}
+        plt.bar(class_counts.keys(), class_counts.values(), color='green')
+        plt.title('Class Distribution')
+        #plt.xlabel('Category')
+        plt.ylabel('Number of Images')
+        plt.show()
     
 
-def get_image_metadata(image_directory):
-    # Dictionary to store image properties
-    image_metadata = {}
+    @staticmethod
+    def get_image_metadata(image_directory):
+        # Dictionary to store image properties
+        image_metadata = {}
 
-    # Iterate through all .png images in the directory
-    all_images = [img for img in os.listdir(
-        image_directory) if img.endswith('.png')]
+        # Iterate through all .png images in the directory
+        all_images = [img for img in os.listdir(
+            image_directory) if img.endswith('.png')]
 
-    for image_name in all_images:
-        image_path = os.path.join(image_directory, image_name)
+        for image_name in all_images:
+            image_path = os.path.join(image_directory, image_name)
 
-        # Read the image
-        image = cv2.imread(image_path)
-        if image is None:
-            print(f"Warning: Could not read image {image_name}")
-            continue
+            # Read the image
+            image = cv2.imread(image_path)
+            if image is None:
+                print(f"Warning: Could not read image {image_name}")
+                continue
 
-        # Get resolution (height, width, channels)
+            # Get resolution (height, width, channels)
+            height, width = image.shape[:2]
+
+            # Determine color property
+            if len(image.shape) == 3 and image.shape[2] == 3:
+                color_property = "RGB"
+            else:
+                color_property = "grey"
+
+            # Add to dictionary
+            image_metadata[image_name] = [f"{width}x{height}", color_property]
+
+        return image_metadata
+
+
+    @staticmethod
+    def img_data_overview(image_directories):
+        data = []
+        # "Check for completeness of images, masks, and masked images."
+        # Initialize counters for Images, Masks, and Masked
+        total_counts = [0, 0, 0]
+
+        for key, value in image_directories.items():
+            cnts = []
+            for k, folder_path in value.items():
+                count = len(os.listdir(folder_path))
+                cnts.append(count)
+
+            # Add counts for the current category to the total
+            total_counts = [total_counts[i] + cnts[i] for i in range(len(cnts))]
+
+            # Append category-specific data
+            data.append([key] + cnts)
+
+        # Append totals to the data
+        data.append(["Total"] + total_counts)
+
+        # Headers
+        headers = ["Category", "Images", "Masks", "Masked"]
+
+        # Print side by side
+        print(tabulate(data, headers=headers, tablefmt="grid"))
+
+
+    @staticmethod
+    def img_count(categories, image_directories):
+        # Use specified categories or all by default
+        cntDict = {}
+        for category in categories:
+            image_directory = image_directories[category]["images"]
+            # Count the number of images in each directory
+            cntDict[category] = len([img for img in os.listdir(
+                image_directory) if img.endswith('.png')])
+
+        return cntDict
+
+
+    @staticmethod
+    def has_black_frame(image, threshold=10):
+        """Check if the image has a black frame around it."""
         height, width = image.shape[:2]
 
-        # Determine color property
-        if len(image.shape) == 3 and image.shape[2] == 3:
-            color_property = "RGB"
-        else:
-            color_property = "grey"
+        # Extract borders
+        top_border = image[:threshold, :]
+        bottom_border = image[-threshold:, :]
+        left_border = image[:, :threshold]
+        right_border = image[:, -threshold:]
 
-        # Add to dictionary
-        image_metadata[image_name] = [f"{width}x{height}", color_property]
+        # Combine all borders
+        borders = np.concatenate((top_border.flatten(), bottom_border.flatten(
+        ), left_border.flatten(), right_border.flatten()))
 
-    return image_metadata
-
-
-def img_data_overview(image_directories):
-    data = []
-    # "Check for completeness of images, masks, and masked images."
-    # Initialize counters for Images, Masks, and Masked
-    total_counts = [0, 0, 0]
-
-    for key, value in image_directories.items():
-        cnts = []
-        for k, folder_path in value.items():
-            count = len(os.listdir(folder_path))
-            cnts.append(count)
-
-        # Add counts for the current category to the total
-        total_counts = [total_counts[i] + cnts[i] for i in range(len(cnts))]
-
-        # Append category-specific data
-        data.append([key] + cnts)
-
-    # Append totals to the data
-    data.append(["Total"] + total_counts)
-
-    # Headers
-    headers = ["Category", "Images", "Masks", "Masked"]
-
-    # Print side by side
-    print(tabulate(data, headers=headers, tablefmt="grid"))
+        # If most border pixels are black, return True
+        return np.mean(borders) < 10
 
 
-def img_count(categories, image_directories):
-    # Use specified categories or all by default
-    cntDict = {}
-    for category in categories:
-        image_directory = image_directories[category]["images"]
-        # Count the number of images in each directory
-        cntDict[category] = len([img for img in os.listdir(
-            image_directory) if img.endswith('.png')])
-
-    return cntDict
+    @staticmethod
+    def calculate_blurriness(image):
+        # Variance of Laplacian method for blurriness detection
+        return cv2.Laplacian(image, cv2.CV_64F).var()
 
 
-def has_black_frame(image, threshold=10):
-    """Check if the image has a black frame around it."""
-    height, width = image.shape[:2]
-
-    # Extract borders
-    top_border = image[:threshold, :]
-    bottom_border = image[-threshold:, :]
-    left_border = image[:, :threshold]
-    right_border = image[:, -threshold:]
-
-    # Combine all borders
-    borders = np.concatenate((top_border.flatten(), bottom_border.flatten(
-    ), left_border.flatten(), right_border.flatten()))
-
-    # If most border pixels are black, return True
-    return np.mean(borders) < 10
+    @staticmethod
+    def calculate_contrast(image):
+        # Contrast calculated as the difference between max and min pixel intensities
+        return image.max() - image.min()
 
 
-def calculate_blurriness(image):
-    # Variance of Laplacian method for blurriness detection
-    return cv2.Laplacian(image, cv2.CV_64F).var()
+    @staticmethod
+    def calculate_variance(image):
+        # Variance of pixel intensities
+        return np.var(image)
 
 
-def calculate_contrast(image):
-    # Contrast calculated as the difference between max and min pixel intensities
-    return image.max() - image.min()
+    @staticmethod
+    def calculate_entropy(image):
+        # Entropy calculation using skimage.measure.shannon_entropy
+        return shannon_entropy(image)
 
 
-def calculate_variance(image):
-    # Variance of pixel intensities
-    return np.var(image)
+    @staticmethod
+    def get_greyscale_image_metrics(directory):
+        # List to store image properties
+        image_metrics = []
+        this = ImageProcessor
+
+        # Iterate through all images in the directory
+        all_images = [img for img in os.listdir(
+            directory) if img.endswith('.png') or img.endswith('.jpg')]
+
+        for image_name in all_images:
+            image_path = os.path.join(directory, image_name)
+
+            # Load the image in greyscale
+            image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+            if image is None:
+                print(f"Warning: Could not read image {image_name}")
+                continue
+
+            # Calculate image metrics
+            mean_intensity = np.mean(image)
+            variance = this.calculate_variance(image)
+            blurriness = this.calculate_blurriness(image)
+            contrast = this.calculate_contrast(image)
+            entropy = this.calculate_entropy(image)
+
+            # Append properties to the list
+            image_metrics.append({
+                "file name": image_name.strip(".png"),
+                "mean intensity": mean_intensity,
+                "variance": variance,
+                "blurriness": blurriness,
+                "contrast": contrast,
+                "entropy": entropy
+            })
+
+        # Convert list to DataFrame
+        df = pd.DataFrame(image_metrics)
+
+        return df
 
 
-def calculate_entropy(image):
-    # Entropy calculation using skimage.measure.shannon_entropy
-    return shannon_entropy(image)
+    @staticmethod
+    def rename_masks(masks_dir):
+        # Iterate through all files in the directory
+        for filename in os.listdir(masks_dir):
+            if filename.startswith("m"):  # already renamed
+                continue
+            else:
+                # Construct the old and new file paths
+                old_path = os.path.join(masks_dir, filename)
+                new_filename = f"m{filename}"
+                new_path = os.path.join(masks_dir, new_filename)
+
+                # Rename the file
+                os.rename(old_path, new_path)
+                print(f"Renamed: {filename} -> {new_filename}")
 
 
-def get_greyscale_image_metrics(directory):
-    # List to store image properties
-    image_metrics = []
+    @staticmethod
+    def apply_masks(imgs_dir, masks_dir, output_dir):
+        if not os.path.exists(imgs_dir):
+            raise FileNotFoundError(f"Images directory does not exist: {imgs_dir}")
+        if not os.path.exists(masks_dir):
+            raise FileNotFoundError(f"Masks directory does not exist: {masks_dir}")
 
-    # Iterate through all images in the directory
-    all_images = [img for img in os.listdir(
-        directory) if img.endswith('.png') or img.endswith('.jpg')]
+        for img_file in os.listdir(imgs_dir):
+            # Construct paths for image and mask
+            img_path = os.path.join(imgs_dir, img_file)
+            mask_file = "m" + img_file  # Assuming masks start with 'm'
+            mask_path = os.path.join(masks_dir, mask_file)
 
-    for image_name in all_images:
-        image_path = os.path.join(directory, image_name)
+            # Check if image and mask exist
+            if not os.path.exists(img_path):
+                print(f"Image file not found: {img_path}")
+                continue
+            if not os.path.exists(mask_path):
+                print(f"Mask file not found: {mask_path}")
+                continue
 
-        # Load the image in greyscale
-        image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
-        if image is None:
-            print(f"Warning: Could not read image {image_name}")
-            continue
+            # Load the image and mask
+            image = Image.open(img_path).convert("L")  # Grayscale image
+            mask = Image.open(mask_path).convert("L")  # Grayscale mask
 
-        # Calculate image metrics
-        mean_intensity = np.mean(image)
-        variance = calculate_variance(image)
-        blurriness = calculate_blurriness(image)
-        contrast = calculate_contrast(image)
-        entropy = calculate_entropy(image)
+            # Resize mask if necessary
+            if image.size != mask.size:
+                mask = mask.resize(image.size, Image.NEAREST)
 
-        # Append properties to the list
-        image_metrics.append({
-            "file name": image_name.strip(".png"),
-            "mean intensity": mean_intensity,
-            "variance": variance,
-            "blurriness": blurriness,
-            "contrast": contrast,
-            "entropy": entropy
-        })
+            # Apply the mask
+            image_array = np.array(image)
+            mask_array = np.array(mask)
+            masked_image_array = image_array * \
+                (mask_array > 0)  # Keep only masked regions
 
-    # Convert list to DataFrame
-    df = pd.DataFrame(image_metrics)
+            # Ensure the output directory exists
+            # if exists: does noting, else: creates one
+            os.makedirs(output_dir, exist_ok=True)
 
-    return df
+            # Save the masked image
+            masked_image = Image.fromarray(masked_image_array.astype('uint8'), "L")
+            masked_file_name = "mskd_"+img_file
+            output_path = os.path.join(output_dir, masked_file_name)
+            masked_image.save(output_path)
 
-
-def rename_masks(masks_dir):
-    # Iterate through all files in the directory
-    for filename in os.listdir(masks_dir):
-        if filename.startswith("m"):  # already renamed
-            continue
-        else:
-            # Construct the old and new file paths
-            old_path = os.path.join(masks_dir, filename)
-            new_filename = f"m{filename}"
-            new_path = os.path.join(masks_dir, new_filename)
-
-            # Rename the file
-            os.rename(old_path, new_path)
-            print(f"Renamed: {filename} -> {new_filename}")
-
-
-def apply_masks(imgs_dir, masks_dir, output_dir):
-    if not os.path.exists(imgs_dir):
-        raise FileNotFoundError(f"Images directory does not exist: {imgs_dir}")
-    if not os.path.exists(masks_dir):
-        raise FileNotFoundError(f"Masks directory does not exist: {masks_dir}")
-
-    for img_file in os.listdir(imgs_dir):
-        # Construct paths for image and mask
-        img_path = os.path.join(imgs_dir, img_file)
-        mask_file = "m" + img_file  # Assuming masks start with 'm'
-        mask_path = os.path.join(masks_dir, mask_file)
-
-        # Check if image and mask exist
-        if not os.path.exists(img_path):
-            print(f"Image file not found: {img_path}")
-            continue
-        if not os.path.exists(mask_path):
-            print(f"Mask file not found: {mask_path}")
-            continue
-
-        # Load the image and mask
-        image = Image.open(img_path).convert("L")  # Grayscale image
-        mask = Image.open(mask_path).convert("L")  # Grayscale mask
-
-        # Resize mask if necessary
-        if image.size != mask.size:
-            mask = mask.resize(image.size, Image.NEAREST)
-
-        # Apply the mask
-        image_array = np.array(image)
-        mask_array = np.array(mask)
-        masked_image_array = image_array * \
-            (mask_array > 0)  # Keep only masked regions
-
-        # Ensure the output directory exists
-        # if exists: does noting, else: creates one
-        os.makedirs(output_dir, exist_ok=True)
-
-        # Save the masked image
-        masked_image = Image.fromarray(masked_image_array.astype('uint8'), "L")
-        masked_file_name = "mskd_"+img_file
-        output_path = os.path.join(output_dir, masked_file_name)
-        masked_image.save(output_path)
-
-        print(f"Processed and saved: {output_path}")
+            print(f"Processed and saved: {output_path}")
 
 
 
 
 
-def visualize_random_images(image_paths, n_samples_per_category=5):
-    """
-    Visualize random samples of images from each category.
+    @staticmethod
+    def visualize_random_images(image_paths, n_samples_per_category=5):
+        """
+        Visualize random samples of images from each category.
 
-    Args:
-        image_paths (list of tuples): List of tuples with (category, path) pairs.
-        n_samples_per_category (int): Number of random samples to visualize per category.
-    """
-    # Group images by category
-    category_dict = {}
-    for category, path in image_paths:
-        if category not in category_dict:
-            category_dict[category] = []
-        category_dict[category].append(path)
+        Args:
+            image_paths (list of tuples): List of tuples with (category, path) pairs.
+            n_samples_per_category (int): Number of random samples to visualize per category.
+        """
+        # Group images by category
+        category_dict = {}
+        for category, path in image_paths:
+            if category not in category_dict:
+                category_dict[category] = []
+            category_dict[category].append(path)
 
-    # Visualize
-    n_categories = len(category_dict)
-    fig, axes = plt.subplots(
-        n_categories, n_samples_per_category, figsize=(20, 4 * n_categories))
+        # Visualize
+        n_categories = len(category_dict)
+        fig, axes = plt.subplots(
+            n_categories, n_samples_per_category, figsize=(20, 4 * n_categories))
 
-    if n_categories == 1:
-        axes = [axes]  # Ensure axes is iterable when there is only one category
+        if n_categories == 1:
+            axes = [axes]  # Ensure axes is iterable when there is only one category
 
-    for row, (category, paths) in enumerate(category_dict.items()):
-        sampled_paths = np.random.choice(
-            paths, size=n_samples_per_category, replace=False)
-        for col, path in enumerate(sampled_paths):
-            img = Image.open(path).convert('L')  # Convert to grayscale
-            axes[row][col].imshow(img, cmap='gray')
-            axes[row][col].set_title(category)
-            axes[row][col].axis('off')
+        for row, (category, paths) in enumerate(category_dict.items()):
+            sampled_paths = np.random.choice(
+                paths, size=n_samples_per_category, replace=False)
+            for col, path in enumerate(sampled_paths):
+                img = Image.open(path).convert('L')  # Convert to grayscale
+                axes[row][col].imshow(img, cmap='gray')
+                axes[row][col].set_title(category)
+                axes[row][col].axis('off')
 
-    plt.tight_layout()
-    plt.show()
+        plt.tight_layout()
+        plt.show()

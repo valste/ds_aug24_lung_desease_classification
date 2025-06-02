@@ -1,10 +1,12 @@
 # folders in the root directory
 /data*/
 /admin/
+/mlruns_vst/
+/mlruns_capsnet/
 
 # ml model files
 *.keras
-# *.h5
+*.h5
 # *.hdf5
 
 # Ignore venv files and folders
