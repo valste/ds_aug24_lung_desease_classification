@@ -1,0 +1,5 @@
+Metric,Precision,Recall,F1-score,Support
+COVID,0.93,0.86,0.89,2039
+Lung_Opacity,0.85,0.88,0.87,2039
+NORMAL,0.91,0.93,0.92,2039
+Viral Pneumonia,0.99,1.00,0.99,2039

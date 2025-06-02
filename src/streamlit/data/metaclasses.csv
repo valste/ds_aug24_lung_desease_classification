@@ -1,0 +1,11 @@
+﻿Class,URL
+COVID,https://sirm.org/category/senza-categoria/covid-19/
+COVID,https://github.com/ml-workgroup/covid-19-image-repository/tree/master/png
+COVID,https://eurorad.org
+COVID,https://github.com/armiro/COVID-CXNet
+COVID,https://github.com/ieee8023/covid-chestxray-dataset
+COVID,https://bimcv.cipf.es/bimcv-projects/bimcv-covid19/#1590858128006-9e640421-6711
+Normal,https://www.kaggle.com/c/rsna-pneumonia-detection-challenge/data
+Normal,https://www.kaggle.com/paultimothymooney/chest-xray-pneumonia
+Viral pneumonia,https://www.kaggle.com/paultimothymooney/chest-xray-pneumonia
+Lung opacity,https://www.kaggle.com/c/rsna-pneumonia-detection-challenge/data
