@@ -3,9 +3,6 @@ from enum import Enum
 from pprint import pprint
 from pathlib import Path
 
-mlruns_path = Path(r"c:\Users\User\DataScience\aug24_cds_int_analysis-of-covid-19-chest-x-rays\mlruns")
-print(mlruns_path.as_uri())
-
 def initDataPaths(project_dir):
     # initializes datapaths
 
@@ -28,6 +25,7 @@ def initDataPaths(project_dir):
     
     MLRUNS_URI = Path(os.path.abspath(os.path.join(PROJECT_DIR, "mlruns_vst"))).as_uri()
     MLRUNS_DIR = os.path.abspath(os.path.join(PROJECT_DIR, "mlruns_vst"))
+    MODELS_DIR = os.path.join(PROJECT_DIR, "models")
 
     IMAGE_DIRECTORIES = {
         "COVID": {
@@ -86,8 +84,10 @@ class ModelType(_Base):
     # Enum for the different model types
     RESNET50 = "resnet50"
     MOBILENET = "mobnet"
+    GAN = "gan"
+    UNET = "unet"
+    CUST_COVID_CNN = "cust_covid_cnn"
     CAPSNET = "capsnet"
-    
     
 
 class ExperimentName(_Base):

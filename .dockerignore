@@ -1,0 +1,21 @@
+# bytecode & misc
+__pycache__/
+*.py[cod]
+*.pyo
+*.so
+*.dylib
+
+# VCS & IDE
+.git
+.gitignore
+*.swp
+.vscode/
+.idea/
+
+# data & experiment artefacts you don’t need inside the image
+csv_files/
+data*/
+metadata/
+mlruns*/
+reports/
+notebooks/

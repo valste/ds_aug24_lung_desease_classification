@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+
+import os
 import streamlit as st
 
 st.set_page_config(page_title="Covid-19 🦠 Detection", page_icon="🦠", layout="wide")
@@ -11,7 +13,9 @@ The service can be hosted on-premise or in the cloud.
 Below is a diagram showing the major components and the workflow of the end-to-end process.
 """
 )
-st.image("src/streamlit/images/product_vision.png", caption="Product Vision Overview")
+from src.defs import PROJECT_DIR
+prod_vision_png = os.path.join(PROJECT_DIR, "src", "streamlit", "images", "product_vision.png")
+st.image(prod_vision_png, caption="Product Vision Overview")
 st.subheader("Prediction Process")
 st.markdown(
     """

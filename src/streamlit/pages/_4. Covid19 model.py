@@ -1,12 +1,17 @@
 # -*- coding: utf-8 -*-
 import streamlit as st
-import io
+import io, os
 import pandas as pd
 from tensorflow.keras.models import load_model
+from src.defs import PROJECT_DIR
+from pathlib import Path
 
 # Set the path to the model directory
-model_path = 'src/streamlit/models/covid19'
-report_data_path = "src/streamlit/data"
+# model_path = 'src/streamlit/models/covid19'
+model_dir = Path(PROJECT_DIR, "models",)
+train_history_path = Path(PROJECT_DIR, "src", "streamlit", "models","covid19","training_history.json")
+# report_data_path = "src/streamlit/data"
+report_data_path = Path(PROJECT_DIR, "src", "streamlit", "data")
 
 
 st.set_page_config(page_title="Covid-19 🦠 Detection", page_icon="🦠", layout="wide")
@@ -25,7 +30,7 @@ Overall, this experience has been highly rewarding and has significantly deepene
 """
 )
 
-model = load_model(f"{model_path}/cnn_model.keras", compile=False)
+model = load_model(os.path.join(model_dir, "ds_crx_covid19.keras"), compile=False)
 
 def get_model_summary(model):
     string_io = io.StringIO()
@@ -38,8 +43,37 @@ st.subheader("Model Summary")
 with st.expander("Show Model Summary"):
     st.code(get_model_summary(model), language='text')
 
+st.subheader("Loss function")
+st.markdown(
+    """
+We tried training the model with categorical_crossentrop function in the beginning but that was not giving us a satisfying result especially for classifying the tricky cases found in the masked lung images. 
+After some research, we switched to a custom function focal_loss which focuses more on hard examples and less on easy ones.
+"""
+)
+
+st.latex(
+    r"""
+    \begin{align}
+    FL(p_t) = -\alpha_t (1 - p_t)^\gamma * \log(p_t) \\
+    \end{align}
+"""
+)
+
+st.markdown(
+    """
+Where:
+- $p_t$ = model predicted probability for the correct class.
+- $\gamma$ = focusing parameter (>0).
+- $\\alpha_t$ = balancing weight for positive/negative classes.
+
+- When $p_t$ is small (model is wrong), $(1 - p_t)^{\gamma}$ is large, increasing loss. 
+- When $p_t$ is large (model is confident/correct), $(1 - p_t)^{\gamma}$ shrinks the loss.
+"""
+)
+
 st.subheader("Model training history")
-cnn_history = pd.read_json(f"{model_path}/training_history.json", orient='records')
+
+cnn_history = pd.read_json(train_history_path, orient='records')
 st.line_chart(cnn_history[['accuracy', 'val_accuracy']], use_container_width=True)
 st.line_chart(cnn_history[['loss', 'val_loss']])
 st.line_chart(cnn_history[['learning_rate']])
