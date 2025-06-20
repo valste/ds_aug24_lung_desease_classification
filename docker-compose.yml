@@ -1,0 +1,16 @@
+# docker-compose.yml
+# used for milti-service applications: FE, BE, DB etc.
+
+
+services:
+  app:
+    build: .
+    ports: ["8501:8501"]
+    volumes:
+      - .:/app
+      # mount the dataset read-only
+      - ./src/streamlit/data:/app/src/streamlit/data:ro                    # live code edits
+      # pretrained / checkpoint models
+      - ./models:/app/models:ro
+    environment:
+      - PYTHONPATH=/app:/app/src        # keep imports working

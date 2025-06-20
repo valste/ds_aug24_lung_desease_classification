@@ -4,7 +4,7 @@ Provides utility class for data handling
 
 # --- Standard Library
 import os
-import pathlib
+import urllib.parse
 import shutil
 from collections import defaultdict
 
@@ -99,7 +99,7 @@ class DataHelper:
 
 
     @staticmethod
-    def get_file_names(dataset_dir, extensions=(".png")):
+    def get_file_names(dataset_dir, extensions=('.png', ".jpeg", ".jpg", )):
         """
         returns all PNG filenames in the dataset directory.
         """
@@ -247,85 +247,117 @@ class DataHelper:
             print(f"Per-epoch wide-format metrics saved to {output_csv_path}")
 
         return df
-
-
+    
+    
 
     @staticmethod
-    def show_training_history_from_csv(metric_csv_file_path, run_ids="all"):
-        
-        # Load metrics CSV
-        metrics = pd.read_csv(metric_csv_file_path)
-        # List of metrics to plot
-        metric_names = ['accuracy', 'val_accuracy', 'loss', 'val_loss', 'learning_rate']
+    def get_training_history_fig_from_csv(metric_csv_file_path, run_ids="all"):
+        """
+        Reads training metrics from a CSV file and generates a Plotly figure.
 
-        # Create subplot layout
-        fig = make_subplots(
-            rows=len(metric_names),
-            cols=1,
-            shared_xaxes=True,
-            subplot_titles=metric_names,
-            vertical_spacing=0.05
-        )
+        Parameters:
+        - metric_csv_file_path: Path to the CSV file containing training metrics.
+        - run_ids: List of run IDs to filter by, or "all" for all runs.
+
+        Returns:
+        - Plotly figure object with training metrics in a 2x3 subplot layout.
+        """
         
-        # use the same color for metrics belonging to the same run
+        import pandas as pd
+        import plotly.graph_objects as go
+        from plotly.subplots import make_subplots
         import plotly.colors as pc
         
-        # Preserve user input
-        selected_run_ids = run_ids
-        # Compute all unique run IDs for color mapping
+        # Load metrics
+        metrics = pd.read_csv(metric_csv_file_path)
+
+        # Metric names (5 individual + 1 for combined history view)
+        metric_names = ['accuracy', 'val_accuracy', 'loss', 'val_loss', 'learning_rate']
+
+        # Setup 2x3 subplots
+        fig = make_subplots(
+            rows=2,
+            cols=3,
+            specs=[
+                [{}, {}, {}],             # Row 1: all separate
+                [{}, {"colspan": 2}, None]  # Row 2: cols 2+3 merged
+            ],
+            subplot_titles=metric_names,
+            shared_xaxes=True,
+            vertical_spacing=0.15,
+            horizontal_spacing=0.05
+        )
+
+        # Color map setup
         unique_run_ids = metrics['run_id'].unique()
         colors = pc.qualitative.Plotly
         color_map = {run_id: colors[i % len(colors)] for i, run_id in enumerate(unique_run_ids)}
-        
-        # Group by run
-        grouped = metrics.groupby(['run_id', "run_name"])
 
-        for i, metric in enumerate(metric_names, start=1):
+        # Filter/group runs
+        selected_run_ids = run_ids
+        grouped = metrics.groupby(['run_id', 'run_name'])
+
+        for idx, metric in enumerate(metric_names):
+            row = idx // 3 + 1
+            col = idx % 3 + 1
+
             for (rID, runName), group in grouped:
                 if selected_run_ids != "all" and rID not in selected_run_ids:
                     continue
-
                 if metric not in group.columns:
-                    continue  # Skip if metric not present
-                
+                    continue
+
                 fig.add_trace(
                     go.Scatter(
                         x=group['epoch'],
                         y=group[metric],
                         mode='lines+markers',
-                        name=f"{rID} : {runName}",
+                        name=f"{runName}",
                         legendgroup=rID,
-                        showlegend=(i == 1),
-                        line=dict(color=color_map[rID])  # ← one consistent color per run
+                        showlegend=(idx == 0),
+                        line=dict(color=color_map[rID])
                     ),
-                    row=i,
-                    col=1
+                    row=row,
+                    col=col
                 )
-                
+
+                # Log scale for learning rate
                 if metric == "learning_rate":
                     fig.update_yaxes(
                         type="log",
                         tickvals=[1e-7, 1e-6, 1e-5, 1e-4, 1e-3],
                         tickformat=".0e",
-                        title="Learning Rate (log)",
-                        row=i,
-                        col=1
+                        #title="Learning Rate (log)",
+                        row=row,
+                        col=2
                     )
-                
 
         # Final layout
         fig.update_layout(
-            height=400 * len(metric_names),
+            height=900,
             width=1400,
-            title_text="Training Metrics by Epoch and Run ID",
-            xaxis_title="Epoch"
+            #title_text="Training Metrics by Epoch and Run ID",
+            xaxis_title="Epoch",
+            legend=dict(
+                orientation="h",     # horizontal layout
+                yanchor="top",       # anchor the legend’s top
+                y=-0.2,              # push it below the plot area
+                xanchor="center",
+                x=0.5,
+                font=dict(
+                    size=14  # change this to your desired font size
+                )
+            )
+
         )
 
-        fig.show()
-        
-        
-        
-        
+        return fig
+
+
+    @staticmethod
+    def show_training_history_from_csv(metric_csv_file_path, run_ids="all"):
+        DataHelper.get_training_history_fig_from_csv(metric_csv_file_path, run_ids).show()
+
        
     @staticmethod
     def get_preprocess_fn(model_type):
@@ -428,5 +460,45 @@ class DataHelper:
         val_ds = val_ds.prefetch(AUTOTUNE)
 
         return train_ds, val_ds
+    
+    
+    @staticmethod
+    def get_file_paths(file_dir, include_types=('.png', '.jpg', '.jpeg')):
+
+        file_paths = []
+        
+        for dirpath, _, filenames in os.walk(file_dir):
+            for file in filenames:
+                if file.lower().endswith(include_types):
+                    full_path = os.path.join(dirpath, file)
+                    file_paths.append(full_path)
+    
+        return file_paths
+    
+    
+    
+    
+    @staticmethod
+    def get_file_urls(file_dir, include_types=('.png', '.jpg', '.jpeg')):
+        """
+        Converts a list of local file paths to file:// URL format.
+
+        Args:
+            file_paths (list of str): List of local file paths.
+
+        Returns:
+            list of str: Corresponding file:// URLs.
+        """
+        file_paths = DataHelper.get_file_paths(file_dir, include_types)
+                
+        urls = []
+        for path in file_paths:
+            # Normalize path and convert to absolute if needed
+            abs_path = os.path.abspath(path)
+            # Convert to file:// URL
+            url = 'file://' + urllib.parse.quote(abs_path.replace("\\", "/"))
+            urls.append(url)
+        return urls
+
     
     

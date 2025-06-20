@@ -123,7 +123,7 @@ def get_edges_images_statistics(images_dir, margin_percentage=0) -> pd.DataFrame
     return pd.DataFrame(data, columns=["image", "min", "max", "mean", "median", "std"])
 
 
-def get_masked_images_statistics(images_dir, mask_dir) -> pd.DataFrame:
+def get_masked_images_statistics(images_dir, mask_dir, lung_only=0) -> pd.DataFrame:
     """
     get_masked_images_statistics function returns the
     stastics of masked images in the directory.
@@ -140,12 +140,22 @@ def get_masked_images_statistics(images_dir, mask_dir) -> pd.DataFrame:
     data = []
     for filename in os.listdir(images_dir):
         if filename.endswith((".png", ".jpg", ".jpeg", ".bmp", ".tiff")):
-            image = apply_image_mask(
+            if lung_only==1:
+                image = select_lung(
                 os.path.join(images_dir, filename),
-                os.path.join(mask_dir, filename),
-            )
-            data.append(calulate_image_statistics(filename, image[0]))
+                os.path.join(mask_dir, filename))
+                image = image.flatten()
+                image= image[~np.isnan(image)]
+                data.append(calulate_image_statistics(filename, image))
+            else:
+                image = apply_image_mask(
+                os.path.join(images_dir, filename),
+                os.path.join(mask_dir, filename),)
+                data.append(calulate_image_statistics(filename, image[0]))
     return pd.DataFrame(data, columns=["image", "min", "max", "mean", "median", "std"])
+
+
+
 
 
 def store_images_statistics(images_data, csv_filename) -> None:
@@ -273,6 +283,17 @@ from src.preprocessing.image_quality import *
 
 
 
+def select_lung(image_path, mask_path) -> np.array:
+  
+    image = cv2.imread(image_path)
+
+    mask = cv2.imread(mask_path)
+    mask = cv2.resize(mask, image.shape[:2])
+    mask = mask = (mask > 127).astype(np.uint8)
+
+    return np.where(mask == 1, mask * image, np.nan)
+
+
 
 
 def get_masked_images_quality(images_dir, mask_dir):
@@ -348,7 +369,7 @@ def get_counter_mask_images_quality(images_dir, mask_dir):
 
 
 
-def plot_image_stats_ensembles(data, labels, groupbyvar, loclegend="center right", sharey=False):
+def plot_image_stats_ensembles(data, labels, groupbyvar, loclegend="center right", sharey=False, save_path=None):
 
     images=[]
 
@@ -373,6 +394,9 @@ def plot_image_stats_ensembles(data, labels, groupbyvar, loclegend="center right
 
     plt.tight_layout()
     plt.show()
+    if save_path:
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
+        fig.savefig(save_path, dpi=300, bbox_inches='tight')  
 
 
 

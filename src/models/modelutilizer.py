@@ -167,9 +167,13 @@ class ModelUtilizer:
         # ---Get the predicted classes---
         # works because shuffle=False in image_dataset_from_directory
         predicted_classes = tf.argmax(predictions, axis=1).numpy()
+        
         # --> The output of a capsule (e.g., digit_caps) is a vector or matrix, and:
         # --> Its length (or Frobenius norm) is interpreted as the confidence of a class being present.
-        confidences = np.max(predictions, axis=1).flatten() # for capsnet only: NOT in range (0,1) but also > 1 possible
+        # Normalize each row in predictions by its row max --> capsnet only because also values > 1 possible
+        predictions = predictions / np.sum(predictions, axis=1, keepdims=True)  # now the sum of each row is 1 (total confidence=100%)
+        confidences = np.max(predictions, axis=1).flatten() 
+
         predicted_labels = [class_to_label_map[int(i)] for i in predicted_classes]
         img_names = dh.get_file_names(dataset_dir)
 
@@ -203,7 +207,31 @@ class ModelUtilizer:
     
     
     @staticmethod
-    def show_classification_report(df, title,  normalize_cm="all", labels=None):
+    def get_classreport_and_confusion_matrix(df, output_dict=True, normalize_cm="all", labels=None):
+        """
+        Generates a classification report and confusion matrix based on the predictions.
+        """
+        y_true = df["true_label"]
+        y_pred = df["predicted_label"]
+
+        # 1. Classification report
+        clsrep = classification_report(
+            y_true,
+            y_pred,
+            output_dict=output_dict,
+            labels=labels,
+            zero_division=0  # suppress undefined metric warnings
+        )
+        
+        # 2. Confusion matrix
+        cm = confusion_matrix(y_true, y_pred, labels=labels, normalize=normalize_cm)
+
+        return clsrep, cm
+
+
+    
+    @staticmethod
+    def show_classification_report(df, title, output_dict=False, normalize_cm="all", labels=None):
         """
         Displays a classification report based on the predictions.
         
@@ -214,23 +242,13 @@ class ModelUtilizer:
         Returns:
         - None
         """
-               
-        y_true = df["true_label"]
-        y_pred = df["predicted_label"]
-
-        # 1. Classification report
+        
+        # display classification report    
+        clsrep, cm = ModelUtilizer.get_classreport_and_confusion_matrix(df, output_dict, normalize_cm="all", labels=None)
         print(f"Classification report for {title}")
-        print(classification_report(
-            y_true,
-            y_pred,
-            labels=labels,
-            zero_division=0  # suppress undefined metric warnings
-        ))
-
-        # 2. Confusion matrix
-        cm = confusion_matrix(y_true, y_pred, labels=labels, normalize=normalize_cm)
-
-        # 3. Display confusion matrix
+        print(clsrep)
+        
+        # Display confusion matrix
         disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=labels)
         disp.plot(cmap='Blues', xticks_rotation=45);
                 
@@ -239,4 +257,34 @@ class ModelUtilizer:
         
         
         
- 
+    @staticmethod
+    def get_imgs_both_models_identified_as_rotated(mod1_predCsvPath, mod2_predCsvPath):
+        """
+        Returns a DataFrame with images that both models identified as rotated.
+        
+        Parameters:
+        - mod1_predCsvPath: Path to the first model's predictions CSV file.
+        - model2_predCsvPath: Path to the second model's predictions CSV file.
+        
+        Returns:
+        - DataFrame with columns: img_name, true_label, mod1_predicted_label, mod2_predicted_label
+        """
+        df_m = pd.read_csv(mod1_predCsvPath, index_col=0)
+        df_r = pd.read_csv(mod2_predCsvPath, index_col=0)
+
+        # Merge on img_name
+        merged_df = df_m.merge(df_r, on="img_name", suffixes=("_1", "_2"))
+
+        # Keep rows where both predictions are not 'rotated_0'
+        df_both_preds_as_rotated = merged_df[
+            (merged_df["predicted_label_1"] != "rotated_0") &
+            (merged_df["predicted_label_2"] != "rotated_0")
+        ]
+
+        df_both_preds_as_rotated = df_both_preds_as_rotated[["img_name", "predicted_label_1", "confidence_1", "predicted_label_2", "confidence_2", ]]
+
+        return df_both_preds_as_rotated
+    
+    
+    
+    

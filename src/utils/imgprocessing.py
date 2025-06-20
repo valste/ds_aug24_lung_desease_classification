@@ -6,33 +6,71 @@ import matplotlib.pyplot as plt
 import cv2
 from tabulate import tabulate
 from skimage.measure import shannon_entropy
+import numpy as np
+from tensorflow.keras.preprocessing.image import img_to_array
+from tqdm import tqdm
+
+        
 
 
 class ImageProcessor():
     # class provides methods to prepare images for modelling
 
+    @staticmethod
+    def from_np_to_pil(img_np: np.ndarray,
+                    assume_float01: bool = True,
+                    make_rgb: bool = False) -> Image.Image:
+        """
+        Convert a NumPy image (H,W[,C]) → PIL.Image.Image.
+
+        * Floats are scaled to 0-255.
+        * (H,W,1) is squeezed to (H,W)   →  "L" mode
+        or broadcast to (H,W,3)        →  "RGB" mode if make_rgb=True.
+        """
+        arr = np.asarray(img_np)
+
+        # ----- handle dtype ------------------------------------------------------
+        if arr.dtype != np.uint8:
+            if assume_float01:                       # floats already in [0,1]
+                arr = np.clip(arr, 0.0, 1.0) * 255.0
+            else:                                    # min-max stretch
+                imin, imax = arr.min(), arr.max()
+                arr = 0 if imin == imax else (arr - imin) / (imax - imin) * 255.0
+            arr = arr.astype(np.uint8)
+
+        # ----- fix shape ---------------------------------------------------------
+        if arr.ndim == 3 and arr.shape[2] == 1:      # (H,W,1) ➜ grayscale or RGB
+            if make_rgb:
+                arr = np.repeat(arr, 3, axis=2)      # (H,W,3)
+            else:
+                arr = arr.squeeze(axis=2)            # (H,W)
+
+        return Image.fromarray(arr)
+    
+    
+    
+    
     
     @staticmethod
-    def list_files( dir_path, extensions=('.png', )):
+    def list_files(from_dir, extensions=('.png', ".jpeg", ".jpg", )):
         """
         lists all files in a directory and returns a list with file names
         """        
-        if not os.path.exists(dir_path):
-            raise Exception(f"directory {dir_path} does not exist")
+        if not os.path.exists(from_dir):
+            raise Exception(f"directory {from_dir} does not exist")
         
         # get all files in the directory
-        filenames = os.listdir(dir_path)  # Returns a list of filenames
+        filenames = os.listdir(from_dir)  # Returns a list of filenames
         # filter by extensions
         filenames = [f for f in filenames if f.endswith(extensions)]
 
         return filenames
     
     
-    
-    
+       
 
     @staticmethod
-    def load_images(imgNames, from_dir):
+    def load_images(from_dir, imgNames="all", extensions=('.png', ".jpeg", ".jpg", )):
         """
         loads images by file names like 'Viral Pneumonia-101.png' from a directory
 
@@ -44,6 +82,10 @@ class ImageProcessor():
         if not imgNames:
             raise Exception("provide a list with image names including the extension")
         
+        # to load all images from a directory
+        if imgNames == "all":
+            imgNames = ImageProcessor.list_files(from_dir, extensions=extensions)
+            
         for iname in imgNames: 
             
             # determine image path
@@ -54,10 +96,8 @@ class ImageProcessor():
                 imgs.append(img)
             else:
                 raise Exception(f"file {iname} not found in {fileDir}")
-
-        return tuple(imgs), tuple(imgNames)
-    
-    
+                
+        return tuple(imgs), tuple(imgNames)       
 
 
 
@@ -85,7 +125,7 @@ class ImageProcessor():
         """
         # load images
         iNames = ImageProcessor.list_files(inputFolder)
-        imgs, iNames = ImageProcessor.load_images(imgNames=inputFolder, from_dir=inputFolder)
+        imgs, iNames = ImageProcessor.load_images(imgNames=iNames, from_dir=inputFolder)
         for img_name, img in zip(iNames, imgs):
             
             # Downscale the image
@@ -203,12 +243,13 @@ class ImageProcessor():
             axes[j].axis("off")
 
         plt.tight_layout()
-        plt.show()
+        # doesn't block the execution in main thread
+        plt.show(block=False)
         
     
     
     @staticmethod
-    def downscale( img, new_size, interpolation=cv2.INTER_AREA, plotResult=True):
+    def downscale(img, new_size, interpolation=cv2.INTER_AREA, plotResult=True):
         # resizes a gray-scaled image to the new_size and returns
               
         # Resize using INTER_AREA
@@ -232,7 +273,7 @@ class ImageProcessor():
     def downscaleToFolder(inputFolder, outputFolder, new_size, interpolation=cv2.INTER_AREA, debug=True):
         # overwrites already existing files if the name is equal
         # get image names
-        filenames = os.listdir(inputFolder)  # Returns a list of filenames
+        filenames = ImageProcessor.list_files(inputFolder)  # Returns a list of filenames
         
         # load images
         imgs, iNames = ImageProcessor.load_images(imgNames=filenames, from_dir=inputFolder)
@@ -535,54 +576,52 @@ class ImageProcessor():
                 print(f"Renamed: {filename} -> {new_filename}")
 
 
+
     @staticmethod
-    def apply_masks(imgs_dir, masks_dir, output_dir):
-        if not os.path.exists(imgs_dir):
-            raise FileNotFoundError(f"Images directory does not exist: {imgs_dir}")
-        if not os.path.exists(masks_dir):
-            raise FileNotFoundError(f"Masks directory does not exist: {masks_dir}")
+    def generate_masked_images(from_dir, model, ori_confs, ori_cols, select_imgs="all", target_size=(256, 256)):
+        """
+        Generate masked images for chest X-ray images using a pre-trained model.
 
-        for img_file in os.listdir(imgs_dir):
-            # Construct paths for image and mask
-            img_path = os.path.join(imgs_dir, img_file)
-            mask_file = "m" + img_file  # Assuming masks start with 'm'
-            mask_path = os.path.join(masks_dir, mask_file)
+        Parameters:
+        - from_dir (str): Path to the folder containing input images.
+        - model (tf.keras.Model): Pre-trained segmentation model.
+        - target_size (tuple): Image size (height, width) for resizing.
 
-            # Check if image and mask exist
-            if not os.path.exists(img_path):
-                print(f"Image file not found: {img_path}")
-                continue
-            if not os.path.exists(mask_path):
-                print(f"Mask file not found: {mask_path}")
-                continue
+        Returns:
+        - masked_images (tuple): Tuple of (masked_image_array, name)
+        - names (tuple): Tuple of original image names
+        """
+        
+        imgs, names = ImageProcessor.load_images(from_dir=from_dir, imgNames=select_imgs)
+        images = []
+        for i, col in enumerate(np.round(ori_confs, 2)):
+            match ori_cols[np.argmax(col)]:
+                case "rotated_180":
+                    image = cv2.rotate (imgs[i], cv2.ROTATE_180)
+                case "rotated_90":
+                    image = cv2.rotate(imgs[i], cv2.ROTATE_90_COUNTERCLOCKWISE)
+                case "rotated_minus_90":
+                    image = cv2.rotate(imgs[i], cv2.ROTATE_90_CLOCKWISE)
+                case "rotated_0":
+                    image = imgs[i]
+            images.append(image)
 
-            # Load the image and mask
-            image = Image.open(img_path).convert("L")  # Grayscale image
-            mask = Image.open(mask_path).convert("L")  # Grayscale mask
+        masked_images = []
 
-            # Resize mask if necessary
-            if image.size != mask.size:
-                mask = mask.resize(image.size, Image.NEAREST)
+        for img in tqdm(images, total=len(imgs)):
+            
+            # resize masked image to target size
+            img = cv2.resize(img, target_size, interpolation=cv2.INTER_LINEAR)
+            img_array = img_to_array(img) / 255.0
+            img_array = np.expand_dims(img_array, axis=0)  # (1, h, w, 1)
+            prediction = model.predict(img_array)
+            mask = (prediction[0, :, :, 0] > 0.5).astype(np.uint8) * 255  # Convert to 0-255
+            mask = (mask > 127).astype(np.uint8)
+            
+            masked = np.asarray(img).copy() * mask
+            masked_images.append(masked)
 
-            # Apply the mask
-            image_array = np.array(image)
-            mask_array = np.array(mask)
-            masked_image_array = image_array * \
-                (mask_array > 0)  # Keep only masked regions
-
-            # Ensure the output directory exists
-            # if exists: does noting, else: creates one
-            os.makedirs(output_dir, exist_ok=True)
-
-            # Save the masked image
-            masked_image = Image.fromarray(masked_image_array.astype('uint8'), "L")
-            masked_file_name = "mskd_"+img_file
-            output_path = os.path.join(output_dir, masked_file_name)
-            masked_image.save(output_path)
-
-            print(f"Processed and saved: {output_path}")
-
-
+        return masked_images, names
 
 
 

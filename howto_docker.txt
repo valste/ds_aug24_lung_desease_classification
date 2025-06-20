@@ -1,0 +1,26 @@
+
+
+>>Due to linux host compatibily the Docker container is built with python 3.11 version<<
+
+1. in the terminal/cli the promt should point to the project root like: aug24_cds_int_analysis-of-covid-19-chest-x-rays$ <command>
+     --> config to enable cache for pip and apt-get
+     --> for Windows PowerShell, Command Prompt
+        set DOCKER_BUILDKIT=1
+     ---> for git bash/mac
+        export DOCKER_BUILDKIT=1      # for current bash shell session only
+
+2. build
+        docker build -t covid-xray-app .
+
+3. run with required mounted volumes: data + models:
+
+        MSYS_NO_PATHCONV=1 docker run --rm -p 8501:8501 \
+          -v "$PWD":/app \
+          -v "/c/Users/User/DataScience/aug24_cds_int_analysis-of-covid-19-chest-x-rays/src/streamlit/data:/app/src/streamlit/data:ro" \
+          -v "/c/Users/User/DataScience/aug24_cds_int_analysis-of-covid-19-chest-x-rays/models:/app/models:ro" \
+          covid-xray-app
+
+4. in browser:
+        http://localhost:8501/
+
+5. use it

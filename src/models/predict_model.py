@@ -10,12 +10,12 @@ from src.visualization.visualize import show_grad_cam_cnn, get_predication_outpu
 root_folder = Path(__file__).resolve().parents[2]
 # Path to the raw data, preprocessed data, model and store images
 raw_data_dir = os.path.join(root_folder, "data", "raw", "dataset", "masked_images_dataset")
-model_dir = os.path.join(root_folder, "models", "ds_cnn_model.keras")
+model_dir = os.path.join(root_folder, "models", "ds_crx_covid19.keras")
 images_dir = os.path.join(root_folder, "reports","images", "grad_cam")
 # Resize images to IMG_SIZExIMG_SIZE pixels
 IMG_SIZE = 256
 # Batch size for training
-batch_size = 16
+batch_size = 200
 
 def main():
     """
@@ -41,7 +41,7 @@ def main():
     show_grad_cam_cnn(images[:4], model, class_names, labels, save_dir=images_dir, image_name=f"cnn_{current_time}", save_image=True)
     
     # Get the prediction output
-    get_predication_output(images[:100], model, class_names, labels).head(100)
+    print(get_predication_output(images[:100], model, class_names, labels).head(100))
 
 if __name__ == "__main__":
     main()
