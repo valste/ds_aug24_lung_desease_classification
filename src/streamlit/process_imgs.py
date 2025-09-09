@@ -167,6 +167,7 @@ def process_images(
     mobnet_path = Path(PROJECT_DIR, "models", "orientation_classifier_224x224_aug_head1_mobnet.keras")
     resnet_path = Path(PROJECT_DIR, "models", "orientation_classifier_224x224_aug_head1_resnet50.keras")
 
+    
     orientation_model = load_model(
         mobnet_path if selected_models.get("orientation") == mt.MOBILENET else resnet_path,
         compile=False,

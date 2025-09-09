@@ -120,7 +120,7 @@ with cols[3]:
     
     
 # -----------------------------------------------------------------------------#
-# Callback: user pressed “Predict” ★ NEW                                        #
+# Callback: user pressed “Predict” ★ NEW                                       #
 # -----------------------------------------------------------------------------#
 def start_predict():
     sel = st.session_state.get("latest_selection", [])
@@ -209,11 +209,18 @@ if st.session_state.predict_running:
         "desease_classifier": classifier_model,
     }
 
-    df_ori, df_m, df_d = process_images(
-        dataset_dir=image_dir,
-        df_selected_rows=df_selected_rows,
-        selected_models=selected_models,
-    )
+    try:
+        df_ori, df_m, df_d = process_images(
+            dataset_dir=image_dir,
+            df_selected_rows=df_selected_rows,
+            selected_models=selected_models,
+        )
+    except Exception as e:
+        st.warning(f"""Processing failed: {e}
+                    Ensure the model files are available in the 
+                    `ds_aug24_lung_desease_classification\models` folder.
+                    Use the the links provided in the Models.md file to download them.
+                    """)
 
     # build “Protocol”
     class_cols = [c for c in df_ori.columns if c != "Filename"]

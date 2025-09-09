@@ -30,7 +30,16 @@ Overall, this experience has been highly rewarding and has significantly deepene
 """
 )
 
-model = load_model(os.path.join(model_dir, "ds_crx_covid19.keras"), compile=False)
+
+try:
+    model = load_model(os.path.join(model_dir, "ds_crx_covid19.keras"), compile=False)
+except Exception as e:
+    st.warning(f"""Processing failed: {e}
+                Ensure the model files are available in the 
+                `ds_aug24_lung_desease_classification\models` folder.
+                Use the the links provided in the Models.md file to download them.
+                """)
+    
 
 def get_model_summary(model):
     string_io = io.StringIO()
