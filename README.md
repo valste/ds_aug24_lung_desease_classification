@@ -1,5 +1,12 @@
 # Datascientest project - Analysis of Covid-19 chest x-rays
 
+## My solo work is presented in the following notebook files, along with all related artifacts and sources used within them, as well as the dockerization setup.
+    notebooks: 
+    * 1.1_Explore_metadata.ipynb
+    * 2.0_Estimate_image_orientation.ipynb
+    * 5.6_Capsnet_4class_disease_classifier.ipynb
+ 
+
 ## Project description
 
 In order to diagnose patients with Covid-19, the analysis of chest X-rays is a possibility to be explored to more easily detect positive cases. If the classification through deep learning of such data proves effective in detecting positive cases, then this method can be used in hospitals and clinics when traditional testing cannot be done.
