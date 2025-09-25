@@ -91,9 +91,9 @@ git add file1
 git commit -m "message"
 ```
 ### Python virtual environment
-To setup venv for this project, use the script `venv.sh` in the root folder of this project as the following:
+To setup venv for this project, use the script `setup.sh` in the root folder of this project as the following:
 ```bash
-source venv.sh help
+source setup.sh help
 ```
 ### Install project dependencies
 To install project's dependencies, use Makefile in the root folder of this project as the following:
