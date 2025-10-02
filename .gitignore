@@ -5,8 +5,10 @@
 /mlruns_capsnet/
 
 # ml model files
+# Ignore keras models everywhere...
 *.keras
-*.h5
+# ...except inside models/ (these will go to Hugging Face via subtree)
+!models/**/*.keras
 # *.hdf5
 
 # Ignore venv files and folders

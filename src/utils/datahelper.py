@@ -312,7 +312,7 @@ class DataHelper:
                         x=group['epoch'],
                         y=group[metric],
                         mode='lines+markers',
-                        name=f"{runName}",
+                        name=f"{rID}:{runName}",
                         legendgroup=rID,
                         showlegend=(idx == 0),
                         line=dict(color=color_map[rID])

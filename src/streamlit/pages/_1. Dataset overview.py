@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
+import os
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 import streamlit as st
+from src.defs import PROJECT_DIR
 
-report_data_path = "src/streamlit/data"
+report_data_path = os.path.join(PROJECT_DIR, "src", "streamlit", "data")
 
 st.set_page_config(page_title="Covid-19 🦠 Detection", page_icon="🦠", layout="wide")
 

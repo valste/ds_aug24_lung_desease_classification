@@ -2,7 +2,9 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import streamlit as st
 from PIL import Image
-
+from src.defs import PROJECT_DIR
+import os
+imgs_dir = os.path.join(PROJECT_DIR, "src", "streamlit", "images")
 
 
 st.set_page_config(page_title="Covid-19 🦠 Detection", page_icon="🦠", layout="wide")
@@ -52,15 +54,8 @@ with st.container():
 
 
 st.subheader("Ensemble Plots of all the chosen image features within the segment of the lung area")
-
-image = Image.open("src/streamlit/images/ensembleplots1.png")
-
-
+image = Image.open(os.path.join(imgs_dir, "ensembleplots1.png"))
 st.image(image, caption="Plots of probability distribution of image features Min, Max, Median, Mean, Std - grouped by diagnostic classes",  use_container_width=True)
-
-
-image = Image.open("src/streamlit/images/ensembleplots2.png")
-
-
+image = Image.open(os.path.join(imgs_dir, "ensembleplots2.png"))
 st.image(image, caption="Plots of probability distribution of image features Brightness, Contrast, Blurriness and Noise - grouped by diagnostic classes",  use_container_width=True)
 

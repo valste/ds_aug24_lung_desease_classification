@@ -5,14 +5,10 @@ Class to construct the different type of models
 # --- Core TensorFlow/Keras
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras import layers
+from tensorflow.keras import layers, Sequential
 from tensorflow.keras.layers import (
     Dense,
-    GlobalAveragePooling2D,
     Input,
-    RandomRotation,
-    RandomTranslation,
-    RandomZoom,
     Rescaling
 )
 from tensorflow.keras.applications import MobileNet, ResNet50
@@ -59,37 +55,43 @@ class ModelBuilder():
         else:
             raise Exception(f"Model not supported: {self.model_name}. The model name must contain one substring from {mt.MOBILENET, mt.RESNET50, mt.CAPSNET}")
         
+        
+        
+    def get_augmentation_pipe(self):
+        # Random-* layers are stochastic only when training=True
+        # disabled during inference/evaluation
+        return Sequential([
+            layers.RandomRotation(0.1),
+            layers.RandomTranslation(height_factor=0.1, width_factor=0.1),
+            layers.RandomZoom(0.1),
+        ], name="augmentation")
+                    
 
     def get_compiled_model(self):
         # Extract config
         compile_params = self.model_params.pop("compile_params")
 
         # Define input layer
-        inputs = Input(shape=self.input_shape)
-        x = inputs  # Start with input
-
-        # Add rescaling  for CapsNet only
-        if self.model_type == mt.CAPSNET:
-            x = Rescaling(1./255)(x)
-
-        # Add data augmentation/transformer pipe for all models
-        x = RandomRotation(0.1)(x)
-        x = RandomTranslation(height_factor=0.1, width_factor=0.1)(x)
-        x = RandomZoom(0.1)(x)
+        inputs = Input(shape=self.input_shape, name="inputs")
+        # Random-* layers are stochastic only when training=True
+        
+        x_aug  = self.get_augmentation_pipe()(inputs)      # stochastic only when training=True
+        x = Rescaling(1./255)(x_aug)                       # disabled during inference/evaluation
 
         # Model selector
         match self.model_type:
             case mt.RESNET50:
-                self.base_model = ResNet50(input_tensor=x, **self.base_model_params)
+                self.base_model = ResNet50(input_tensor=x_aug, **self.base_model_params)
                 self.base_model.trainable = self.base_trainable
 
             case mt.MOBILENET:
-                self.base_model = MobileNet(input_tensor=x, **self.base_model_params)
+                self.base_model = MobileNet(input_tensor=x_aug, **self.base_model_params)
                 self.base_model.trainable = self.base_trainable
 
             case mt.CAPSNET:
                 self.base_model = None
-                outputs = self.build_capsnet(preprocessing_layer = x, **self.model_params)
+                x = Rescaling(1./255)(x)
+                outputs = self.build_capsnet(inputs = x_aug, **self.model_params)
 
             case _:
                 raise Exception(f"Model type {self.model_type} not supported: {self.model_name}")
@@ -114,7 +116,7 @@ class ModelBuilder():
 
             
   
-    def build_capsnet(self, preprocessing_layer, **params):
+    def build_capsnet(self, inputs, **params):
         """
         Build a Capsule Network model for four class lung iseases classification: COVID, Normal, Pneumonia and Opacity.
         Args:
@@ -132,7 +134,7 @@ class ModelBuilder():
         first_Conv2DKernel_size =  params.pop("first_Conv2DKernel_size")
                 
         # --- Preprocessing Layers ---
-        x = preprocessing_layer
+        x = inputs
 
         # --- Feature Extraction ---
         # learns 64 different 3x3 filters

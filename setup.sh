@@ -41,11 +41,11 @@ fi
 # --- PROMPT USER ---
 echo
 echo "Do you want to:"
-echo "  [n] Create new virtual environment"
-echo "  [s] Skip venv and just set PYTHONPATH"
-read -rp "Select an option [n/s]: " choice
+echo "  [c] Create new virtual environment"
+echo "  [s] Skip venv and just add the project directory to PYTHONPATH"
+read -rp "Select an option [c/s]: " choice
 
-if [[ "$choice" == "n" ]]; then
+if [[ "$choice" == "c" ]]; then
     step "Creating virtual environment at $VENV_DIR ..."
     if [ ! -d "$VENV_DIR" ]; then
         $PYTHON_VERSION -m venv "$VENV_DIR"
@@ -77,7 +77,6 @@ if [[ "$choice" == "n" ]]; then
     echo "export PYTHONPATH=\"$PROJECT_DIR:\$PYTHONPATH\"" >> "${VENV_DIR}/bin/activate"
 
     echo -e "\n✅ Setup complete!"
-    echo -e "\n✅ Setup complete!"
     echo "To activate the virtual environment, run:"
     echo "   • On Windows \(Git Bash\): source ../venv_rag/Scripts/activate"
     echo "   • On macOS/Linux:        source ../venv_rag/bin/activate"
@@ -88,11 +87,37 @@ elif [[ "$choice" == "s" ]]; then
     export PYTHONPATH="$PROJECT_DIR:$PYTHONPATH"
     echo "export PYTHONPATH=\"$PROJECT_DIR:\$PYTHONPATH\"" >> ~/.bashrc
 
-    echo -e "\n✅ Project folder added to PYTHONPATH."
+    echo -e "✅ Project folder added to PYTHONPATH."
     echo "You may need to restart your shell or run: source ~/.bashrc"
     echo "Afterwards, run src/streamlit/Home.py in the python shell inside of an appropriate environment to explore the demo app."
 
 else
-    echo "❌ Invalid option. Please run again and choose \[n\] or \[s\]."
+    echo "❌ Invalid option. Please run again and choose \[c\] or \[s\]."
     exit 1
 fi
+
+# --- PROMPT TO DOWNLOAD MODELS ---
+
+# Check for dry-run flag
+DRY_RUN=false
+for arg in "$@"; do
+    if [[ "$arg" == "--dry-run" ]]; then
+        DRY_RUN=true
+    fi
+done
+
+echo "Would you like to download the models right away [d] or skip this step [s]?"
+echo "--->Selecting [d] will overwrite any existing models in the /models directory!<---"
+read -rp "[d/s]: " USER_CHOICE
+
+if [[ "$USER_CHOICE" == "d" ]]; then
+    echo "🚀 Starting model download..."
+    if [[ "$DRY_RUN" == true ]]; then
+        bash ./download_models.sh --dry-run
+    else
+        bash ./download_models.sh
+    fi
+else
+    echo "❌ Skipping model download."
+fi
+

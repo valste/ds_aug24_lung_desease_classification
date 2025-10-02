@@ -7,11 +7,10 @@ from src.defs import PROJECT_DIR
 from pathlib import Path
 
 # Set the path to the model directory
-# model_path = 'src/streamlit/models/covid19'
 model_dir = Path(PROJECT_DIR, "models",)
 train_history_path = Path(PROJECT_DIR, "src", "streamlit", "models","covid19","training_history.json")
 # report_data_path = "src/streamlit/data"
-report_data_path = Path(PROJECT_DIR, "src", "streamlit", "data")
+demo_data_path = Path(PROJECT_DIR, "src", "streamlit", "data")
 
 
 st.set_page_config(page_title="Covid-19 🦠 Detection", page_icon="🦠", layout="wide")
@@ -30,9 +29,17 @@ Overall, this experience has been highly rewarding and has significantly deepene
 """
 )
 
+model_path = os.path.join(
+    PROJECT_DIR,
+    "models",
+    "ds-cxr-covid19",
+    "CNN",
+    "data",
+    "model.keras"
+)
 
 try:
-    model = load_model(os.path.join(model_dir, "ds_crx_covid19.keras"), compile=False)
+    model = load_model(model_path, compile=False)
 except Exception as e:
     st.warning(f"""Processing failed: {e}
                 Ensure the model files are available in the 
@@ -41,16 +48,15 @@ except Exception as e:
                 """)
     
 
-def get_model_summary(model):
-    string_io = io.StringIO()
-    model.summary(print_fn=lambda x: print(x, file=string_io))
-    summary_string = string_io.getvalue()
-    string_io.close()
-    return summary_string
+file_path=os.path.join(PROJECT_DIR, "models\ds-cxr-covid19\model_summary.txt")
+# Read the file into a variable
+with open(file_path, 'r', encoding='utf-8') as file:
+    model_summary = file.read()
+
 
 st.subheader("Model Summary")
 with st.expander("Show Model Summary"):
-    st.code(get_model_summary(model), language='text')
+    st.code(model_summary, language='text')
 
 st.subheader("Loss function")
 st.markdown(
@@ -98,9 +104,13 @@ The results can be summarized as the following:
 - Viral Pneumonia: near perfect prediction, but we know that this class had mode augmented images than the others
 """
 )
-cnn_model_cm = pd.read_csv(f"{report_data_path}/cnn_model_cm.csv", index_col=0)
+cnn_model_cm = pd.read_csv(f"{demo_data_path}/cnn_model_cm.csv", index_col=0)
 st.dataframe(cnn_model_cm)
-st.image("src/streamlit/images/cnn_cm.png", caption="Confusion Matrix")
+
+imgs_dir = os.path.join(PROJECT_DIR, "src", "streamlit", "images")
+
+st.subheader("Confusion Matrix")
+st.image(os.path.join(imgs_dir, "cnn_cm.png"), caption="Confusion Matrix")
 
 st.subheader("Grad-CAM visualization")
-st.image("src/streamlit/images/5.5_cnn.png", caption="Grad-CAM visualization for CNN model")
+st.image(os.path.join(imgs_dir, "5.5_cnn.png"), caption="Grad-CAM visualization for CNN model")

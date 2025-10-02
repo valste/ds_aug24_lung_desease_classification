@@ -255,6 +255,8 @@ class ModelUtilizer:
         plt.title(f"Confusion matrix for {title}\nnormalization mode:{normalize_cm}")
         plt.show()
         
+        return clsrep
+        
         
         
     @staticmethod
