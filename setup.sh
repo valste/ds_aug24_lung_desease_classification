@@ -106,7 +106,7 @@ for arg in "$@"; do
     fi
 done
 
-echo "Would you like to download the models right away [d] or skip this step [s]?"
+echo "Would you like to download/clone the models right away [d] or skip this step [s]?"
 echo "--->Selecting [d] will overwrite any existing models in the /models directory!<---"
 read -rp "[d/s]: " USER_CHOICE
 
