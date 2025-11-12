@@ -3,11 +3,13 @@ from enum import Enum
 from pprint import pprint
 from pathlib import Path
 
-def initDataPaths(project_dir):
+
+
+def initDataPaths(project_dir=os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))):
     # initializes datapaths
 
-    global PROJECT_DIR 
-    global METADATA_DIR 
+    global PROJECT_DIR
+    global METADATA_DIR
     global IMAGE_DIRECTORIES
     global TRAINIG_DATA_DIR_254_IMG_ORIENTATION
     global TRULY_ROTATED_IMG_224
@@ -15,54 +17,125 @@ def initDataPaths(project_dir):
     global TRAINIG_DATA_DIR_256_MASKED_BALANCED
     global MLRUNS_URI
     global MLRUNS_DIR
+    global MODELS_DIR
 
     PROJECT_DIR = project_dir
+    MODELS_DIR = os.path.join(PROJECT_DIR, "models")
     METADATA_DIR = os.path.join(PROJECT_DIR, r"metadata")
-    TRAINIG_DATA_DIR_254_IMG_ORIENTATION = os.path.join(PROJECT_DIR, r"data_224x224\train_val_224x224")
+    TRAINIG_DATA_DIR_254_IMG_ORIENTATION = os.path.join(
+        PROJECT_DIR, r"data_224x224\train_val_224x224"
+    )
     TRULY_ROTATED_IMG_224 = os.path.join(PROJECT_DIR, r"224x224_truly_rotated")
-    TRAINIG_DATA_DIR_256_MASKED_IMBALANCED = os.path.join(PROJECT_DIR, r"256x256_masked_images_imbalanced")
-    TRAINIG_DATA_DIR_256_MASKED_BALANCED = os.path.join(PROJECT_DIR, r"256x256_masked_images_balanced")
-    
+    TRAINIG_DATA_DIR_256_MASKED_IMBALANCED = os.path.join(
+        PROJECT_DIR, r"256x256_masked_images_imbalanced"
+    )
+    TRAINIG_DATA_DIR_256_MASKED_BALANCED = os.path.join(
+        PROJECT_DIR, r"256x256_masked_images_balanced"
+    )
+
     MLRUNS_URI = Path(os.path.abspath(os.path.join(PROJECT_DIR, "mlruns_vst"))).as_uri()
     MLRUNS_DIR = os.path.abspath(os.path.join(PROJECT_DIR, "mlruns_vst"))
-    MODELS_DIR = os.path.join(PROJECT_DIR, "models")
 
     IMAGE_DIRECTORIES = {
         "COVID": {
-            "images": os.path.join(PROJECT_DIR, "data", "COVID-19_Radiography_Dataset", "COVID", "images"),
-            "masks": os.path.join(PROJECT_DIR, "data", "COVID-19_Radiography_Dataset", "COVID", "masks"),
+            "images": os.path.join(
+                PROJECT_DIR, "data", "COVID-19_Radiography_Dataset", "COVID", "images"
+            ),
+            "masks": os.path.join(
+                PROJECT_DIR, "data", "COVID-19_Radiography_Dataset", "COVID", "masks"
+            ),
         },
         "Lung_Opacity": {
-            "images": os.path.join(PROJECT_DIR, "data", "COVID-19_Radiography_Dataset", "Lung_Opacity", "images"),
-            "masks": os.path.join(PROJECT_DIR, "data", "COVID-19_Radiography_Dataset", "Lung_Opacity", "masks"),
+            "images": os.path.join(
+                PROJECT_DIR,
+                "data",
+                "COVID-19_Radiography_Dataset",
+                "Lung_Opacity",
+                "images",
+            ),
+            "masks": os.path.join(
+                PROJECT_DIR,
+                "data",
+                "COVID-19_Radiography_Dataset",
+                "Lung_Opacity",
+                "masks",
+            ),
         },
         "Normal": {
-            "images": os.path.join(PROJECT_DIR, "data", "COVID-19_Radiography_Dataset", "Normal", "images"),
-            "masks": os.path.join(PROJECT_DIR, "data", "COVID-19_Radiography_Dataset", "Normal", "masks"),
+            "images": os.path.join(
+                PROJECT_DIR, "data", "COVID-19_Radiography_Dataset", "Normal", "images"
+            ),
+            "masks": os.path.join(
+                PROJECT_DIR, "data", "COVID-19_Radiography_Dataset", "Normal", "masks"
+            ),
         },
         "Viral Pneumonia": {
-            "images": os.path.join(PROJECT_DIR, "data", "COVID-19_Radiography_Dataset", "Viral Pneumonia", "images"),
-            "masks": os.path.join(PROJECT_DIR, "data", "COVID-19_Radiography_Dataset", "Viral Pneumonia", "masks"),
+            "images": os.path.join(
+                PROJECT_DIR,
+                "data",
+                "COVID-19_Radiography_Dataset",
+                "Viral Pneumonia",
+                "images",
+            ),
+            "masks": os.path.join(
+                PROJECT_DIR,
+                "data",
+                "COVID-19_Radiography_Dataset",
+                "Viral Pneumonia",
+                "masks",
+            ),
         },
     }
 
-def checkDataPaths():
+
+def checkPaths():
     print(
-    "\nPROJECT_DIR: ", PROJECT_DIR,
-    "\nMETADATA_DIR: ", METADATA_DIR,
-    "\nIMAGE_DIRECTORIES: ", IMAGE_DIRECTORIES,
-    "\nTRAINIG_DATA_DIR_254_IMG_ORIENTATION: ", TRAINIG_DATA_DIR_254_IMG_ORIENTATION,
-    "\nTRULY_ROTATED_IMG_224: ", TRULY_ROTATED_IMG_224,
-    "\nTRAINIG_DATA_DIR_256_MASKED_IMBALANCED: ", TRAINIG_DATA_DIR_256_MASKED_IMBALANCED,
-    "\nTRAINIG_DATA_DIR_256_MASKED_BALANCED: ", TRAINIG_DATA_DIR_256_MASKED_BALANCED,
-    "\nMLRUNS_URI: ", MLRUNS_URI
+        "\nPROJECT_DIR: ",
+        PROJECT_DIR,
+        "\nMETADATA_DIR: ",
+        METADATA_DIR,
+        "\nIMAGE_DIRECTORIES: ",
+        IMAGE_DIRECTORIES,
+        "\nTRAINIG_DATA_DIR_254_IMG_ORIENTATION: ",
+        TRAINIG_DATA_DIR_254_IMG_ORIENTATION,
+        "\nTRULY_ROTATED_IMG_224: ",
+        TRULY_ROTATED_IMG_224,
+        "\nTRAINIG_DATA_DIR_256_MASKED_IMBALANCED: ",
+        TRAINIG_DATA_DIR_256_MASKED_IMBALANCED,
+        "\nTRAINIG_DATA_DIR_256_MASKED_BALANCED: ",
+        TRAINIG_DATA_DIR_256_MASKED_BALANCED,
+        "\nMLRUNS_URI: ",
+        MLRUNS_URI,
+        "\nMODELS_DIR: ",
+        MODELS_DIR,
     )
-    print("original dataset directories: ")
-    pprint(IMAGE_DIRECTORIES)
     
+    
+#----setting paths----
+initDataPaths()
+#---and checking them----
+checkPaths()
+    
+
+
 class _Base(str, Enum):
     def __str__(self):
         return self.value
+
+
+class ModelPath(_Base):
+    CAPSNET = os.path.join(
+        MODELS_DIR, "capsnet-4class-disease-classifier", "model.keras"
+    )
+    COVID19 = os.path.join(MODELS_DIR, "ds-crx-covid19", "model.keras")
+    GAN = os.path.join(MODELS_DIR, "lung-segmentation-gan", "model.keras")
+    UNET = os.path.join(MODELS_DIR, "lung-segmentation-unet", "model.keras")
+    MOBNET = os.path.join(
+        MODELS_DIR, "orientation-classifier-224x224-aug-head1-mobnet", "model.keras"
+    )
+    RESNET = os.path.join(
+        MODELS_DIR, "orientation-classifier-224x224-aug-head2-resnet50", "model.keras"
+    )
 
 
 class DiseaseCategory(_Base):
@@ -88,47 +161,49 @@ class ModelType(_Base):
     UNET = "unet"
     CUST_COVID_CNN = "cust_covid_cnn"
     CAPSNET = "capsnet"
-    
+
 
 class ExperimentName(_Base):
     # mlflow experiment names
     ORIENTATION_CLASSIFIER = "orientation_classifier"
     DESEASE_CLASSIFIER = "desease_classifier"
-    
-    
+
+
 # >>>>>IMPORTANT: the mapping must be the same as for the training dataset!!!!<<<<<
 # check loaded dataset
 class_to_orientation_map = {
-    "long": {
-        0: 'rotated_0',         
-        1: 'rotated_180',       
-        2: 'rotated_90',        
-        3: 'rotated_minus_90'   
-    },
+    "long": {0: "rotated_0", 1: "rotated_180", 2: "rotated_90", 3: "rotated_minus_90"},
     "short": {
-        0 : "0°",
-        1 : "180°",
-        2 : "90°",
-        3 : "-90°",
+        0: "0°",
+        1: "180°",
+        2: "90°",
+        3: "-90°",
     },
 }
 
 orientation_labels = {
-    "short": ["0°","180°","90°","-90°",],
-    "long": ['rotated_0','rotated_180','rotated_90','rotated_minus_90']
-    }
-    
-class_to_disease_map = {
-        0: 'COVID',          
-        1: 'Lung_Opacity',   
-        2: 'Normal',         
-        3: 'Viral Pneumonia' 
-    }
+    "short": [
+        "0°",
+        "180°",
+        "90°",
+        "-90°",
+    ],
+    "long": ["rotated_0", "rotated_180", "rotated_90", "rotated_minus_90"],
+}
 
-disease_labels = ['COVID', 'Lung_Opacity', 'Normal', 'Viral Pneumonia']
+class_to_disease_map = {
+    0: "COVID",
+    1: "Lung_Opacity",
+    2: "Normal",
+    3: "Viral Pneumonia",
+}
+
+disease_labels = ["COVID", "Lung_Opacity", "Normal", "Viral Pneumonia"]
 
 
 class DatasetType(_Base):
     TRAIN = "train"
     TEST = "test"
     PREDICT = "predict"
+
+

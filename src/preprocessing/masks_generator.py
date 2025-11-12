@@ -28,7 +28,7 @@ def predict_and_save(image_path, output_path, model, target_size, apply_mask=Fal
     img_array = np.expand_dims(img_array, axis=0)  # (1, h, w, 1)
     prediction = model.predict(img_array)
     mask = (prediction[0, :, :, 0] > 0.5).astype(np.uint8) * 255  # Convert to 0-255
-    mask = mask = (mask > 127).astype(np.uint8)
+    mask = (mask > 127).astype(np.uint8)
 
     if apply_mask:
         mask = np.asarray(img).copy() * mask
