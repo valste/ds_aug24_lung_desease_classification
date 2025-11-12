@@ -3,6 +3,8 @@
 /admin/
 /mlruns_vst/
 /mlruns_capsnet/
+/models/*
+!/models/.gitkeep
 
 # ml model files
 # Ignore keras models everywhere...
