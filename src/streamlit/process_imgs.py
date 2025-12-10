@@ -4,7 +4,6 @@ on chest‑X‑ray images and returning ready‑to‑display Pandas DataFrames.
 This module is UI‑agnostic (no Streamlit code). Use from Streamlit pages or
 plain Python scripts.
 """
-from __future__ import annotations
 
 # ---------------------------------------------------------------------------
 # Standard library imports
@@ -182,6 +181,7 @@ def process_images(
     ori_confs = orientation_model.predict(ds, verbose=0)
 
     ori_cols = _as_text_labels(class_to_orientation_map["long"])  # type: ignore[index]
+    
     df_orientation = (
         pd.DataFrame(np.round(ori_confs, 2), columns=ori_cols)
         .assign(Filename=selected_image_names)

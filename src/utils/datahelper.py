@@ -137,13 +137,12 @@ class DataHelper:
     
     
     @staticmethod
-    def get_run_ids(experiment_id):
+    def get_run_ids(experiment_id, run_view_type=mlflow.entities.ViewType.ACTIVE_ONLY):
         """
-         Retunrs all active runs (status = RUNNING or FINISHED)
-         for an experiment_name
-         
+         Retunrs all acrive runs by default for a given experiment ID.
+                  
         Args:
-            experiment_name : _description_
+            experiment_id : _description_
 
         Returns:
             run_ids [] 
@@ -151,11 +150,11 @@ class DataHelper:
         DataHelper.check_mlflow_tracking_set()
         runs_df = mlflow.search_runs(
             experiment_ids=[experiment_id],
-            run_view_type=mlflow.entities.ViewType.ACTIVE_ONLY  # includes RUNNING + FINISHED
+            run_view_type=run_view_type  
         )
 
         return runs_df["run_id"].tolist()
-    
+
     
     
     @staticmethod

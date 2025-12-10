@@ -11,7 +11,10 @@ from st_aggrid import AgGrid, GridOptionsBuilder, JsCode
 # -----------------------------------------------------------------------------#
 # Project-level imports                                                         #
 # -----------------------------------------------------------------------------#
-from process_imgs import image_path_to_base64_html, process_images       # moved up
+from src import defs
+from process_imgs import image_path_to_base64_html, process_images  # moved up
+
+
 from src.defs import ModelType as mt, PROJECT_DIR
 from src.utils.datahelper import DataHelper as dh
 
@@ -19,7 +22,9 @@ from src.utils.datahelper import DataHelper as dh
 # Constants                                                                     #
 # -----------------------------------------------------------------------------#
 
-DATA_FOR_PRODUCT_DEMO = os.path.join(PROJECT_DIR, "src", "streamlit", "data", "data_for_product_demo", "unlabeled")
+DATA_FOR_PRODUCT_DEMO = os.path.join(
+    PROJECT_DIR, "src", "streamlit", "data", "data_for_product_demo", "unlabeled"
+)
 
 # -----------------------------------------------------------------------------#
 # Streamlit page config & global CSS                                            #
@@ -43,11 +48,11 @@ st.title("🫁 Lung diagnostics")
 # Session-state scaffolding ★ NEW                                               #
 # -----------------------------------------------------------------------------#
 for k, v in {
-    "overlay": False,              # draw veil this pass?
-    "predict_running": False,      # heavy work scheduled?
+    "overlay": False,  # draw veil this pass?
+    "predict_running": False,  # heavy work scheduled?
     "results_df": pd.DataFrame(),  # right-hand grid data
-    "selected_rows": [],           # rows picked on the left
-    "grid_version": 0,             # bump → force grid rebuild
+    "selected_rows": [],  # rows picked on the left
+    "grid_version": 0,  # bump → force grid rebuild
 }.items():
     st.session_state.setdefault(k, v)
 
@@ -79,7 +84,8 @@ function(params) {
 """
 )
 
-CODE_RENDERER = JsCode("""
+CODE_RENDERER = JsCode(
+    """
 class CodeCellRenderer {
   init(params) {
     this.eGui = document.createElement('pre');
@@ -94,19 +100,24 @@ class CodeCellRenderer {
     return this.eGui;
   }
 }
-""")
+"""
+)
 
 # -----------------------------------------------------------------------------#
 # Sidebar / control widgets                                                     #
 # -----------------------------------------------------------------------------#
-cols = st.columns(4)                                                # shrink to 4 (button moves)
+cols = st.columns(4)  # shrink to 4 (button moves)
 
 with cols[0]:
-    dataset = st.selectbox("Select dataset", ["Original-rotated", "Original-images", "Unknown-images"])
+    dataset = st.selectbox(
+        "Select dataset",
+        ["Original-rotated", "Original-images", "external/external_raw"],
+    )
     image_dir = os.path.join(DATA_FOR_PRODUCT_DEMO, dataset)
     image_names = dh.get_file_names(image_dir, extensions=(".png", ".jpg", ".jpeg"))
     imgs_base64_html = [
-        image_path_to_base64_html(os.path.join(image_dir, fn), max_width=200) for fn in image_names
+        image_path_to_base64_html(os.path.join(image_dir, fn), max_width=200)
+        for fn in image_names
     ]
 
 with cols[1]:
@@ -117,24 +128,31 @@ with cols[2]:
 
 with cols[3]:
     classifier_model = st.selectbox("Classifier", [mt.CUST_COVID_CNN, mt.CAPSNET])
-    
-    
+
+
 # -----------------------------------------------------------------------------#
 # Callback: user pressed “Predict” ★ NEW                                       #
 # -----------------------------------------------------------------------------#
 def start_predict():
     sel = st.session_state.get("latest_selection", [])
-    
+
     # ------ choose ONE of the following lines ------ #
     if sel is None:
         st.warning("Please select at least one image first.")
         return
 
-    st.session_state.selected_rows = sel     # store the list (not DataFrame!)
+    st.session_state.selected_rows = sel  # store the list (not DataFrame!)
     st.session_state.overlay = True
     st.session_state.predict_running = True
-    
-st.button("Predict", use_container_width=True, key="predict_btn", type="primary", on_click=start_predict)
+
+
+st.button(
+    "Predict",
+    use_container_width=True,
+    key="predict_btn",
+    type="primary",
+    on_click=start_predict,
+)
 
 # -----------------------------------------------------------------------------#
 # DataFrames for AG-Grid                                                        #
@@ -157,8 +175,12 @@ grid_options_left["defaultColDef"] = {"resizable": True, "flex": 1, "minWidth": 
 
 # --------------- Right grid options ----------------------------------------- #
 gb_right = GridOptionsBuilder()
-gb_right.configure_column("Preview", cellRenderer=IMAGE_RENDERER, autoHeight=True, flex=1)
-gb_right.configure_column("Protocol", cellRenderer=CODE_RENDERER, autoHeight=True, flex=2)
+gb_right.configure_column(
+    "Preview", cellRenderer=IMAGE_RENDERER, autoHeight=True, flex=1
+)
+gb_right.configure_column(
+    "Protocol", cellRenderer=CODE_RENDERER, autoHeight=True, flex=2
+)
 gb_right.configure_grid_options(
     localeText={"noRowsToShow": "Select images on the left and press Predict button"},
     onFirstDataRendered=AUTO_SIZE_JS,
@@ -166,15 +188,17 @@ gb_right.configure_grid_options(
 grid_options_right = gb_right.build()
 grid_options_right["defaultColDef"] = {"resizable": True, "minWidth": 100}
 
+
 # -----------------------------------------------------------------------------#
 # Helper: build “protocol” strings ★ NEW (extracted)                            #
 # -----------------------------------------------------------------------------#
 def make_protocol(row, class_cols, show_sep=True, show_file=True):
     file_line = f"{row['Filename']}\n" if show_file else ""
     class_line = "class:      " + "  ".join(f"{c:<15}" for c in class_cols)
-    conf_line  = "confidence: " + "  ".join(f"{row[c]:<15.2f}" for c in class_cols)
+    conf_line = "confidence: " + "  ".join(f"{row[c]:<15.2f}" for c in class_cols)
     sep = "\n" + ("_" * max(len(class_line), len(conf_line))) if show_sep else ""
     return f"{file_line}{class_line}\n{conf_line}{sep}"
+
 
 # -----------------------------------------------------------------------------#
 # Layout – two-column main area                                                 #
@@ -188,7 +212,7 @@ with left_col:
         df_left,
         key="left_grid",
         gridOptions=grid_options_left,
-        update_on=[],                            # no Python callbacks per click
+        update_on=[],  # no Python callbacks per click
         allow_unsafe_jscode=True,
         columns_auto_size_mode=True,
         height=600,
@@ -216,11 +240,13 @@ if st.session_state.predict_running:
             selected_models=selected_models,
         )
     except Exception as e:
-        st.warning(f"""Processing failed: {e}
+        st.warning(
+            f"""Processing failed: {e}
                     Ensure the model files are available in the 
                     `ds_aug24_lung_desease_classification\models` folder.
                     Use the the links provided in the Models.md file to download them.
-                    """)
+                    """
+        )
 
     # build “Protocol”
     class_cols = [c for c in df_ori.columns if c != "Filename"]
@@ -237,8 +263,8 @@ if st.session_state.predict_running:
     st.session_state.results_df = df_m
     st.session_state.predict_running = False
     st.session_state.overlay = False
-    st.session_state.grid_version += 1          # force new grid
-    st.rerun()                     # 3rd pass – veil disappears
+    st.session_state.grid_version += 1  # force new grid
+    st.rerun()  # 3rd pass – veil disappears
 
 
 # ---------------- Right: results grid --------------------------------------- #
@@ -248,13 +274,12 @@ with right_col:
         st.session_state.results_df,
         key=f"results_grid_{st.session_state.grid_version}",
         gridOptions=grid_options_right,
-        update_on=[],                            # keep state client-side
+        update_on=[],  # keep state client-side
         allow_unsafe_jscode=True,
         columns_auto_size_mode=True,
         height=600,
     )
 
-    
 
 # -----------------------------------------------------------------------------#
 # Overlay – draw only while heavy job runs ★ NEW                               #

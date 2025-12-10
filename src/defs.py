@@ -5,7 +5,7 @@ from pathlib import Path
 
 
 
-def initDataPaths(project_dir=os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))):
+def initDataPaths(project_dir=os.path.dirname(os.path.dirname(__file__))):
     # initializes datapaths
 
     global PROJECT_DIR
@@ -18,6 +18,8 @@ def initDataPaths(project_dir=os.path.abspath(os.path.join(os.path.dirname(__fil
     global MLRUNS_URI
     global MLRUNS_DIR
     global MODELS_DIR
+    global EXTERNAL_RAW_DEMO_DATA_DIR
+    global EXTERNAL_MASKED_DEMO_DATA_DIR
 
     PROJECT_DIR = project_dir
     MODELS_DIR = os.path.join(PROJECT_DIR, "models")
@@ -35,6 +37,9 @@ def initDataPaths(project_dir=os.path.abspath(os.path.join(os.path.dirname(__fil
 
     MLRUNS_URI = Path(os.path.abspath(os.path.join(PROJECT_DIR, "mlruns_vst"))).as_uri()
     MLRUNS_DIR = os.path.abspath(os.path.join(PROJECT_DIR, "mlruns_vst"))
+    
+    EXTERNAL_RAW_DEMO_DATA_DIR = os.path.join(PROJECT_DIR, "src", "streamlit", "data", "data_for_product_demo", "unlabeled", "external", "external_raw_299x299")
+    EXTERNAL_MASKED_DEMO_DATA_DIR = os.path.join(PROJECT_DIR, "src", "streamlit", "data", "data_for_product_demo", "unlabeled", "external", "external_masked_256x256")
 
     IMAGE_DIRECTORIES = {
         "COVID": {
@@ -205,5 +210,4 @@ class DatasetType(_Base):
     TRAIN = "train"
     TEST = "test"
     PREDICT = "predict"
-
 

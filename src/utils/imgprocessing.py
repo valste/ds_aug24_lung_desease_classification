@@ -589,14 +589,17 @@ class ImageProcessor:
 
     @staticmethod
     def generate_masked_images(
-        from_dir, model, ori_confs, ori_cols, select_imgs="all", target_size=(256, 256)
+        from_dir, model, consider_orientation_correction=False, ori_confs=None, ori_cols=None, select_imgs="all", target_size=(256, 256)
     ):
         """
-        Generate masked images for chest X-ray images using a pre-trained model.
+        Generate masked images for chest X-ray images using a pre-trained segmentation model.
 
         Parameters:
         - from_dir (str): Path to the folder containing input images.
         - model (tf.keras.Model): Pre-trained segmentation model.
+        - consider_orientation_correction (bool): Whether to correct image orientation based on provided confidences.
+        - ori_confs (list of lists): Orientation confidences for each image.
+        - ori_cols (list): Orientation labels corresponding to the confidences.
         - target_size (tuple): Image size (height, width) for resizing.
 
         Returns:
@@ -608,34 +611,35 @@ class ImageProcessor:
             from_dir=from_dir, imgNames=select_imgs
         )
         images = []
-        for i, col in enumerate(np.round(ori_confs, 2)):
-            match ori_cols[np.argmax(col)]:
-                case "rotated_180":
-                    image = cv2.rotate(imgs[i], cv2.ROTATE_180)
-                case "rotated_90":
-                    image = cv2.rotate(imgs[i], cv2.ROTATE_90_COUNTERCLOCKWISE)
-                case "rotated_minus_90":
-                    image = cv2.rotate(imgs[i], cv2.ROTATE_90_CLOCKWISE)
-                case "rotated_0":
-                    image = imgs[i]
-            images.append(image)
+        
+        # for orientation correction if required
+        if consider_orientation_correction:
+            for i, col in enumerate(np.round(ori_confs, 2)):
+                match ori_cols[np.argmax(col)]:
+                    case "rotated_180":
+                        image = cv2.rotate(imgs[i], cv2.ROTATE_180)
+                    case "rotated_90":
+                        image = cv2.rotate(imgs[i], cv2.ROTATE_90_COUNTERCLOCKWISE)
+                    case "rotated_minus_90":
+                        image = cv2.rotate(imgs[i], cv2.ROTATE_90_CLOCKWISE)
+                    case "rotated_0":
+                        image = imgs[i]
+                images.append(image)
+        else:
+            images = imgs
 
         masked_images = []
 
         for img in tqdm(images, total=len(imgs)):
-
             # resize masked image to target size
-            img = cv2.resize(img, target_size, interpolation=cv2.INTER_LINEAR)
-            img_array = img_to_array(img) / 255.0
-            img_array = np.expand_dims(img_array, axis=0)  # (1, h, w, 1)
-            prediction = model.predict(img_array)
-            mask = (prediction[0, :, :, 0] > 0.5).astype(
-                np.uint8
-            ) * 255  # Convert to 0-255
-            mask = (mask > 127).astype(np.uint8)
-
-            masked = np.asarray(img).copy() * mask
-            masked_images.append(masked)
+            img = cv2.resize(img, target_size, interpolation=cv2.INTER_LINEAR)  # resize image to (target_height, target_width)
+            img_array = img_to_array(img) / 255.0  # convert image to float32 NumPy array and normalize pixel values to [0, 1]
+            img_array = np.expand_dims(img_array, axis=0)  # add batch dimension -> shape becomes (1, height, width, channels)
+            prediction = model.predict(img_array)  # run the segmentation model to get per-pixel probabilities
+            mask = (prediction[0, :, :, 0] > 0.5).astype(np.uint8) * 255  # take first batch & channel, threshold at 0.5, get 0/255 mask
+            mask = (mask > 127).astype(np.uint8)  # ensure strictly binary mask with values 0 or 1
+            masked = np.asarray(img).copy() * mask  # apply mask: keep pixels where mask == 1, zero out (black) where mask == 0
+            masked_images.append(masked)  # store masked image in the list for later use
 
         return masked_images, names
 
